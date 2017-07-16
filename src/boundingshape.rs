@@ -12,15 +12,15 @@ pub struct Bounds {
 impl Bounds {
     pub fn new(val1: f64, val2: f64) -> Self {
         if val1 <= val2 {
-            return Bounds {
+            Bounds {
                 lower: val1,
                 upper: val2,
-            };
+            }
         } else {
-            return Bounds {
+            Bounds {
                 lower: val2,
                 upper: val1,
-            };
+            }
         }
     }
 }
@@ -34,16 +34,14 @@ pub struct BoundingShape {
     grid_interval: f64,
     max_radius: f64,
     visible: bool,
-    is_on_edge: bool,
+    //is_on_edge: bool,
 }
 
 impl BoundingShape {
     pub fn new(spot: &Spot, time: f64) -> Self {
-        // TODO: Fix these hacks by implementing Star properly
-        let period = 25.05;
-        let grid_interval = 0.01;
-        let inclination = 0.0;
+        let grid_interval = 0.001;
 
+        // TODO: Fix these hacks by implementing Star properly
         let mut radius = spot.radius;
         let max_radius = radius;
 
@@ -58,7 +56,7 @@ impl BoundingShape {
             }
         }
 
-        let phase = (time % period) / period * 2.0 * consts::PI;
+        let phase = (time % spot.star.period) / spot.star.period * 2.0 * consts::PI;
         let theta = phase + spot.longitude;
         let phi = consts::FRAC_PI_2 - spot.longitude;
         let mut center = Point {
@@ -66,7 +64,7 @@ impl BoundingShape {
             y: phi.sin() * theta.sin(),
             z: phi.cos(),
         };
-        center.rotate_y(inclination - consts::FRAC_PI_2);
+        center.rotate_y(spot.star.inclination - consts::FRAC_PI_2);
 
         let depth = (1.0 - radius*radius).sqrt();
         let circle_center = Point {
@@ -94,7 +92,7 @@ impl BoundingShape {
         let x1 = circle_center.x + radius*((theta_x_max).cos()*a.x + (theta_x_max).sin()*b.x);
         let x2 = circle_center.x + radius*((theta_x_min).cos()*a.x + (theta_x_min).sin()*b.x);
 
-        let is_on_edge = x1 < 0.0 || x2 < 0.0;
+        //let is_on_edge = x1 < 0.0 || x2 < 0.0;
         let visible = x1 > 0.0 || x2 > 0.0;
 
         BoundingShape {
@@ -106,7 +104,7 @@ impl BoundingShape {
             grid_interval: grid_interval,
             max_radius: max_radius,
             visible: visible,
-            is_on_edge: is_on_edge,
+            //is_on_edge: is_on_edge,
         }
     }
 
@@ -114,12 +112,17 @@ impl BoundingShape {
         if !self.visible {
             return Bounds::new(0.0, 0.0);
         }
-        let mut theta_y_max = consts::PI;
-        let mut theta_y_min = 0.0;
-        if self.b.y != 0.0 {
-            theta_y_max = -2.0 * ((self.a.y - (self.a.y * self.a.y + self.b.y * self.b.y).sqrt()) / self.b.y).atan();
-            theta_y_min = -2.0 * ((self.a.y + (self.a.y * self.a.y + self.b.y * self.b.y).sqrt()) / self.b.y).atan();
-        }
+
+        let theta_y_min = if self.b.y != 0.0 {
+            -2.0 * ((self.a.y + (self.a.y * self.a.y + self.b.y * self.b.y).sqrt()) / self.b.y).atan()
+        } else {
+            0.0
+        };
+        let theta_y_max = if self.b.y != 0.0 {
+            -2.0 * ((self.a.y - (self.a.y * self.a.y + self.b.y * self.b.y).sqrt()) / self.b.y).atan()
+        } else {
+            consts::PI
+        };
 
         let y_max = self.circle_center.y + self.radius*(theta_y_max.cos()*self.a.y + theta_y_max.sin()*self.b.y);
         let y_min = self.circle_center.y + self.radius*(theta_y_min.cos()*self.a.y + theta_y_min.sin()*self.b.y);
@@ -147,7 +150,7 @@ impl BoundingShape {
 
         let mut z_max = 2.0;
         let mut z_min = 2.0;
-        let mut z = 0.0;
+        let mut z;
 
         z = self.center.z+self.radius;
         while (z > self.center.z - self.radius) && self.on_spot(y, z) {

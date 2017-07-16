@@ -1,11 +1,13 @@
 extern crate std;
 use std::f64::consts;
+use std::rc::Rc;
 
 use star::Star;
 use boundingshape::BoundingShape;
 use float_range::FloatRange;
 
 pub struct Spot {
+    pub star: Rc<Star>,
     pub latitude: f64,
     pub longitude: f64,
     pub radius: f64,
@@ -14,36 +16,68 @@ pub struct Spot {
     pub mortal: bool,
     pub time_appear: f64,
     pub time_disappear: f64,
+    pub intensity: f64,
 }
 
 impl Spot {
-    pub fn new(latitude: f64, longitude: f64, fillfactor: f64, plage: bool, mortal: bool) -> Self {
-        let this = Spot {
+    pub fn new(star: Rc<Star>, latitude: f64, longitude: f64, fillfactor: f64, plage: bool, mortal: bool) -> Self {
+        let temperature = star.temperature - star.spot_temp_diff;
+        Spot {
+            star: star,
             latitude: latitude * consts::PI / 180.0,
             longitude: longitude * consts::PI / 180.0,
             radius: (2.0 * fillfactor).sqrt(),
-            temperature: 0.0,
+            temperature: temperature,
             plage: plage,
             mortal: mortal,
             time_appear: 0.0,
             time_disappear: 15.0,
-        };
-        if plage {
-            panic!("Plages are not implemented");
+            intensity: 0.0,
         }
-        return this;
     }
 
-    pub fn get_flux(&self, time: f64) {
-
+    pub fn get_flux(&self, time: f64) -> f64 {
         let grid_interval = 0.01;
 
         let mut limb_integral = 0.0;
-        let bounds = BoundingShape::new(&self, time);
+        let bounds = BoundingShape::new(self, time);
         let y_bounds = bounds.y_bounds();
-        let mut y = y_bounds.lower;
         for y in FloatRange(y_bounds.lower, y_bounds.upper, grid_interval) {
+            limb_integral += self.star.limb_integral(&bounds.z_bounds(y), y);
+        }
+        limb_integral
+    }
 
+    pub fn get_ccf(&self, time: f64) -> Vec<f64> {
+        let mut profile = vec![0.0; self.star.profile_active.len()];
+        let bounds = BoundingShape::new(self, time);
+        let y_bounds = bounds.y_bounds();
+        for y in FloatRange(y_bounds.lower, y_bounds.upper, self.star.grid_interval) {
+            let quiet_shifted = self.star.profile_quiet.shift(y * self.star.equatorial_velocity);
+            let active_shifted = self.star.profile_active.shift(y * self.star.equatorial_velocity);
+
+            let z_bounds = bounds.z_bounds(y);
+            let limb_integral = self.star.limb_integral(&z_bounds, y);
+
+            for i in 0..quiet_shifted.len() {
+                profile[i] += (quiet_shifted[i] - self.intensity * active_shifted[i]) * limb_integral;
+            }
+        }
+        profile
+    }
+
+    pub fn alive(&self, time: f64) -> bool {
+        if !self.mortal {
+            true
+        } else {
+            time >= self.time_appear && time <= self.time_disappear
         }
     }
+
+    pub fn collides_with(&self, other: &Spot) -> bool {
+        let bounds = BoundingShape::new(self, 0.0);
+        let other_bounds = BoundingShape::new(other, 0.0);
+        bounds.collides_with(&other_bounds)
+    }
+
 }

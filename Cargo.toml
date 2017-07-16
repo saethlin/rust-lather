@@ -5,3 +5,6 @@ authors = ["saethlin <kimockb@gmail.com>"]
 
 [dependencies]
 rand = "*"
+GSL = "*"
+rust-ini = "*"
+itertools = "*"

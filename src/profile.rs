@@ -2,8 +2,8 @@ extern crate std;
 use std::iter;
 
 pub struct Profile {
-    rv: Vec<f64>,
-    ccf: Vec<f64>,
+    pub rv: Vec<f64>,
+    pub ccf: Vec<f64>,
     derivative: Vec<f64>,
 }
 
@@ -33,6 +33,10 @@ impl Profile {
 
     pub fn len(&self) -> usize {
         self.rv.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     pub fn shift(&self, velocity: f64) -> Vec<f64> {

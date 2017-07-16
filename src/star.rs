@@ -1,32 +1,34 @@
-extern crate rand;
 use std::f64::consts;
 
 use profile::Profile;
 use boundingshape::Bounds;
 use sun_ccfs::*;
+use fit_rv::{Gaussian, fit_rv};
 
-static SOLAR_RADIUS: f64 = 696000.0;
+static SOLAR_RADIUS: f64 = 696000.0; // TODO: km/s
 static DAYS_TO_SECONDS: f64 = 86400.0;
 
 pub struct Star {
-    period: f64,
-    inclination: f64,
-    temperature: f64,
-    spot_temp_diff: f64,
+    pub period: f64,
+    pub inclination: f64,
+    pub temperature: f64,
+    pub spot_temp_diff: f64,
     limb_linear: f64,
     limb_quadratic: f64,
-    grid_interval: f64,
-    intensity: f64,
-    flux_quiet: f64,
-    zero_rv: f64,
-    equatorial_velocity: f64,
-    integrated_ccf: Vec<f64>,
-    fit_result: Vec<f64>,
+    pub grid_interval: f64,
+    pub intensity: f64,
+    pub flux_quiet: f64,
+    pub zero_rv: f64,
+    pub equatorial_velocity: f64,
+    pub integrated_ccf: Vec<f64>,
+    pub fit_result: Gaussian,
+    pub profile_active: Profile,
+    pub profile_quiet: Profile,
 }
 
 impl Star {
     pub fn new(radius: f64, period: f64, inclination: f64, temperature: f64, spot_temp_diff: f64,
-               limb_linear: f64, limb_quadratic: f64, grid_size: usize) {
+               limb_linear: f64, limb_quadratic: f64, grid_size: usize) -> Self {
 
         let sqrt = f64::sqrt;
 
@@ -36,27 +38,43 @@ impl Star {
         let profile_quiet = Profile::new(rv(), ccf_quiet());
         let profile_active = Profile::new(rv(), ccf_active());
 
-        let (fluxes, weighted_ccfs) = (0..grid_size).map(|a| (a as f64 * (2.0 / grid_size as f64)) - 1.0)
-            .map(|y| {
-                let shifted_ccf = profile_quiet.shift(y * equatorial_velocity);
-                let z_bound = sqrt(1.0 - y*y);
-                let limb_integral = limb_integral(Bounds::new(-z_bound, z_bound), y, limb_linear, limb_quadratic);
-                return (limb_integral, shifted_ccf.iter().map(|a| a*limb_integral));
-            }).unzip();
-
-        let quiet_flux = fluxes.sum();
-
-        /* This is a pretty direct translation from C++ for what I want to do above
-        for y in (0..grid_size).map(|a| (a as f64 * (2.0 / grid_size as f64)) - 1.0) {
+        let mut integrated_ccf = vec![0.0; ccf_quiet().len()];
+        let mut flux_quiet = 0.0;
+        let grid_step = 2.0/grid_size as f64;
+        for y in (0..grid_size).map(|a| (a as f64 * grid_step) - 1.0) {
             let ccf_shifted = profile_quiet.shift(y * equatorial_velocity);
             let z_bound = sqrt(1.0 - y*y);
-            let limb_integral = limb_integral(Bounds::new(-z_bound, z_bound), y, limb_linear, limb_quadratic);
-            for (ref mut integrated, shifted) in integrated_ccf.iter().zip(ccf_shifted) {
-                *integrated = *integrated + (shifted * limb_integral);
+            let limb_integral = limb_integral(&Bounds::new(-z_bound, z_bound), y, limb_linear, limb_quadratic);
+            for i in 0..integrated_ccf.len() {
+                integrated_ccf[i] += ccf_shifted[i] * limb_integral;
             }
             flux_quiet += limb_integral;
         }
-        */
+
+        let guess = Gaussian{height: 0.0, centroid: 0.0, width: 0.0, offset: 0.0};
+        let initial_fit = fit_rv(&rv(), &integrated_ccf, &guess);
+
+        Star {
+            period: period,
+            inclination: inclination * consts::PI/180.0,
+            temperature: temperature,
+            spot_temp_diff: spot_temp_diff,
+            limb_linear: limb_linear,
+            limb_quadratic: limb_quadratic,
+            grid_interval: grid_step,
+            intensity: 0.0,
+            flux_quiet: flux_quiet,
+            zero_rv: initial_fit.centroid,
+            equatorial_velocity: equatorial_velocity,
+            integrated_ccf: integrated_ccf,
+            fit_result: initial_fit,
+            profile_active: profile_active,
+            profile_quiet: profile_quiet,
+        }
+    }
+
+    pub fn limb_integral(&self, z_bounds: &Bounds, y: f64) -> f64 {
+        limb_integral(z_bounds, y, self.limb_linear, self.limb_quadratic)
     }
 }
 
@@ -65,8 +83,9 @@ pub fn min(a: f64, b: f64) -> f64 {
     b
 }
 
-pub fn limb_integral(z_bounds: Bounds, y: f64, limb_linear: f64, limb_quadratic: f64) -> f64 {
-    if z_bounds.lower == z_bounds.upper {
+pub fn limb_integral(z_bounds: &Bounds, y: f64, limb_linear: f64, limb_quadratic: f64) -> f64 {
+    use std::f64::EPSILON;
+    if (z_bounds.lower - z_bounds.upper).abs() < EPSILON {
         return 0.0;
     }
 
