@@ -3,27 +3,7 @@ use std::f64::consts;
 
 use point::Point;
 use spot::Spot;
-
-pub struct Bounds {
-    pub lower: f64,
-    pub upper: f64
-}
-
-impl Bounds {
-    pub fn new(val1: f64, val2: f64) -> Self {
-        if val1 <= val2 {
-            Bounds {
-                lower: val1,
-                upper: val2,
-            }
-        } else {
-            Bounds {
-                lower: val2,
-                upper: val1,
-            }
-        }
-    }
-}
+use bounds::Bounds;
 
 pub struct BoundingShape {
     center: Point,
@@ -47,11 +27,10 @@ impl BoundingShape {
 
         if spot.mortal {
             let lifetime = spot.time_disappear - spot.time_appear;
-            let growth_time = 0.1*lifetime;
+            let growth_time = 0.1 * lifetime;
             if (time - spot.time_appear).abs() < growth_time {
                 radius *= (time - spot.time_appear).abs() / growth_time;
-            }
-            else if (time - spot.time_disappear).abs() < growth_time {
+            } else if (time - spot.time_disappear).abs() < growth_time {
                 radius *= (time - spot.time_disappear).abs() / growth_time;
             }
         }
@@ -66,14 +45,15 @@ impl BoundingShape {
         };
         center.rotate_y(spot.star.inclination - consts::FRAC_PI_2);
 
-        let depth = (1.0 - radius*radius).sqrt();
+        let depth = (1.0 - radius * radius).sqrt();
         let circle_center = Point {
             x: center.x * depth,
             y: center.y * depth,
             z: center.z * depth,
         };
 
-        let a_y = -circle_center.z/(circle_center.y*circle_center.y + circle_center.z*circle_center.z).sqrt();
+        let a_y = -circle_center.z /
+            (circle_center.y * circle_center.y + circle_center.z * circle_center.z).sqrt();
         let a = Point {
             x: 0.0,
             y: a_y,
@@ -81,16 +61,16 @@ impl BoundingShape {
         };
 
         let b = Point {
-            x: circle_center.y*a.z - circle_center.z*a.y,
-            y: circle_center.z*a.x - circle_center.x*a.z,
-            z: circle_center.x*a.y - circle_center.y*a.x,
+            x: circle_center.y * a.z - circle_center.z * a.y,
+            y: circle_center.z * a.x - circle_center.x * a.z,
+            z: circle_center.x * a.y - circle_center.y * a.x,
         };
 
         let theta_x_max = -2.0 * ((a.x - (a.x * a.x + b.x * b.x).sqrt()) / b.x).atan();
         let theta_x_min = -2.0 * ((a.x + (a.x * a.x + b.x * b.x).sqrt()) / b.x).atan();
 
-        let x1 = circle_center.x + radius*((theta_x_max).cos()*a.x + (theta_x_max).sin()*b.x);
-        let x2 = circle_center.x + radius*((theta_x_min).cos()*a.x + (theta_x_min).sin()*b.x);
+        let x1 = circle_center.x + radius * ((theta_x_max).cos() * a.x + (theta_x_max).sin() * b.x);
+        let x2 = circle_center.x + radius * ((theta_x_min).cos() * a.x + (theta_x_min).sin() * b.x);
 
         //let is_on_edge = x1 < 0.0 || x2 < 0.0;
         let visible = x1 > 0.0 || x2 > 0.0;
@@ -114,22 +94,28 @@ impl BoundingShape {
         }
 
         let theta_y_min = if self.b.y != 0.0 {
-            -2.0 * ((self.a.y + (self.a.y * self.a.y + self.b.y * self.b.y).sqrt()) / self.b.y).atan()
+            -2.0 *
+                ((self.a.y + (self.a.y * self.a.y + self.b.y * self.b.y).sqrt()) / self.b.y).atan()
         } else {
             0.0
         };
         let theta_y_max = if self.b.y != 0.0 {
-            -2.0 * ((self.a.y - (self.a.y * self.a.y + self.b.y * self.b.y).sqrt()) / self.b.y).atan()
+            -2.0 *
+                ((self.a.y - (self.a.y * self.a.y + self.b.y * self.b.y).sqrt()) / self.b.y).atan()
         } else {
             consts::PI
         };
 
-        let y_max = self.circle_center.y + self.radius*(theta_y_max.cos()*self.a.y + theta_y_max.sin()*self.b.y);
-        let y_min = self.circle_center.y + self.radius*(theta_y_min.cos()*self.a.y + theta_y_min.sin()*self.b.y);
+        let y_max = self.circle_center.y +
+            self.radius * (theta_y_max.cos() * self.a.y + theta_y_max.sin() * self.b.y);
+        let y_min = self.circle_center.y +
+            self.radius * (theta_y_min.cos() * self.a.y + theta_y_min.sin() * self.b.y);
 
         // TODO: FIX THIS
-        let x_max = self.circle_center.x + self.radius*(theta_y_max.cos()*self.a.y + theta_y_max.sin()*self.b.y);
-        let x_min = self.circle_center.x + self.radius*(theta_y_max.cos()*self.b.y + theta_y_max.sin()*self.b.y);
+        let x_max = self.circle_center.x +
+            self.radius * (theta_y_max.cos() * self.a.y + theta_y_max.sin() * self.b.y);
+        let x_min = self.circle_center.x +
+            self.radius * (theta_y_max.cos() * self.b.y + theta_y_max.sin() * self.b.y);
 
         if x_min < 0.0 && x_max < 0.0 {
             return Bounds::new(0.0, 0.0);
@@ -140,7 +126,7 @@ impl BoundingShape {
         if x_min < 0.0 {
             return Bounds::new(y_max, -1.0);
         }
-        Bounds::new(y_min,  y_max)
+        Bounds::new(y_min, y_max)
     }
 
     pub fn z_bounds(&self, y: f64) -> Bounds {
@@ -152,7 +138,7 @@ impl BoundingShape {
         let mut z_min = 2.0;
         let mut z;
 
-        z = self.center.z+self.radius;
+        z = self.center.z + self.radius;
         while (z > self.center.z - self.radius) && self.on_spot(y, z) {
             z_max = z;
             z -= self.grid_interval;
@@ -169,26 +155,25 @@ impl BoundingShape {
 
     pub fn on_spot(&self, y: f64, z: f64) -> bool {
         if !on_star(y, z) {
-            return false
+            return false;
         }
-        let x = (1.0 - (y*y + z*z)).sqrt();
-        let distance_squared = (y-self.circle_center.y)*(y-self.circle_center.y) +
-            (z-self.circle_center.z)*(z-self.circle_center.z) +
-            (x-self.circle_center.x)*(x-self.circle_center.x);
+        let x = (1.0 - (y * y + z * z)).sqrt();
+        let distance_squared = (y - self.circle_center.y) * (y - self.circle_center.y) +
+            (z - self.circle_center.z) * (z - self.circle_center.z) +
+            (x - self.circle_center.x) * (x - self.circle_center.x);
 
         distance_squared <= (self.radius * self.radius)
     }
 
     pub fn collides_with(&self, other: &BoundingShape) -> bool {
-        let distance = (
-            (self.center.x - other.center.x).powi(2) +
-            (self.center.y - other.center.y).powi(2) +
-            (self.center.z - other.center.z).powi(2)
-            ).sqrt();
+        let distance = ((self.center.x - other.center.x).powi(2) +
+                            (self.center.y - other.center.y).powi(2) +
+                            (self.center.z - other.center.z).powi(2))
+            .sqrt();
         distance < (self.max_radius + other.max_radius)
     }
 }
 
 fn on_star(y: f64, z: f64) -> bool {
-    (y*y + z*z) <= 1.0
+    (y * y + z * z) <= 1.0
 }

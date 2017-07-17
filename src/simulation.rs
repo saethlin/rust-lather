@@ -24,10 +24,10 @@ pub struct Simulation {
     generator: rand::ThreadRng,
 }
 
-fn normalize(vector: &mut Vec<f64>) {
+pub fn normalize(vector: &mut Vec<f64>) {
     let max = vector.iter().cloned().fold(std::f64::NAN, f64::max);
-    for ref mut item in vector {
-        **item /= max;
+    for item in vector.iter_mut() {
+        *item /= max;
     }
 }
 
@@ -44,36 +44,56 @@ impl Simulation {
         let limb_linear = star.get("limb1").unwrap().parse::<f64>().unwrap();
         let limb_quadratic = star.get("limb2").unwrap().parse::<f64>().unwrap();
         let dynamic_fill_factor = star.get("fillfactor").unwrap().parse::<f64>().unwrap();
-        let grid_size = star.get("gridsize").unwrap().parse::<usize>().unwrap();
+        let grid_size = star.get("grid_resolution")
+            .unwrap()
+            .parse::<usize>()
+            .unwrap();
 
         let mut this = Simulation {
-            star: Rc::new(Star::new(radius, period, inclination, temperature, spot_temp_diff, limb_linear, limb_quadratic, grid_size)),
+            star: Rc::new(Star::new(
+                radius,
+                period,
+                inclination,
+                temperature,
+                spot_temp_diff,
+                limb_linear,
+                limb_quadratic,
+                grid_size,
+            )),
             spots: Vec::new(),
             dynamic_fill_factor: dynamic_fill_factor,
             generator: rand::thread_rng(),
         };
 
-        for spot in file
-            .iter()
+        for spot in file.iter()
             .filter(|&(s, _)| s.to_owned().is_some())
             .filter(|&(s, _)| s.to_owned().unwrap().as_str().starts_with("spot"))
-            .map(|(_, p)| p) {
+            .map(|(_, p)| p)
+        {
 
             let latitude = spot.get("latitude").unwrap().parse::<f64>().unwrap();
             let longitude = spot.get("longitude").unwrap().parse::<f64>().unwrap();
             let size = spot.get("size").unwrap().parse::<f64>().unwrap();
             let plage = spot.get("plage").unwrap().parse::<bool>().unwrap();
 
-            this.spots.push(Spot::new(this.star.clone(), latitude, longitude, size, plage, false));
+            this.spots.push(Spot::new(
+                this.star.clone(),
+                latitude,
+                longitude,
+                size,
+                plage,
+                false,
+            ));
         }
 
         this
     }
 
     fn check_fill_factor(&mut self, time: f64) {
-        let mut current_fill_factor = self.spots.iter()
+        let mut current_fill_factor = self.spots
+            .iter()
             .filter(|s| s.alive(time))
-            .map(|s| (s.radius*s.radius)/2.0)
+            .map(|s| (s.radius * s.radius) / 2.0)
             .sum::<f64>();
 
         let fill_range = LogNormal::new(0.5, 4.0);
@@ -83,8 +103,9 @@ impl Simulation {
         while current_fill_factor < self.dynamic_fill_factor {
 
             let new_fill_factor = iter::repeat(())
-                .map(|_| fill_range.ind_sample(&mut self.generator)*9.4e-6)
-                .find(|v| *v < 0.001).unwrap();
+                .map(|_| fill_range.ind_sample(&mut self.generator) * 9.4e-6)
+                .find(|v| *v < 0.001)
+                .unwrap();
 
             let mut new_spot = Spot::new(
                 self.star.clone(),
@@ -97,42 +118,59 @@ impl Simulation {
             new_spot.time_appear += time;
             new_spot.time_disappear += time;
 
-            let collides = self.spots.iter()
-                .filter(|s| s.alive(new_spot.time_appear) || s.alive(new_spot.time_disappear))
+            let collides = self.spots
+                .iter()
+                .filter(|s| {
+                    s.alive(new_spot.time_appear) || s.alive(new_spot.time_disappear)
+                })
                 .any(|s| new_spot.collides_with(s));
 
             if !collides {
-                current_fill_factor += (new_spot.radius*new_spot.radius)/2.0;
+                current_fill_factor += (new_spot.radius * new_spot.radius) / 2.0;
                 self.spots.push(new_spot);
             }
         }
     }
 
-    pub fn observe_flux(&mut self, time: Vec<f64>, wavelength_min: f64, wavelength_max: f64) -> Vec<f64> {
+    pub fn observe_flux(
+        &mut self,
+        time: &[f64],
+        wavelength_min: f64,
+        wavelength_max: f64,
+    ) -> Vec<f64> {
         let star_intensity = planck_integral(self.star.temperature, wavelength_min, wavelength_max);
         for spot in &mut self.spots {
-            spot.intensity = planck_integral(spot.temperature, wavelength_min, wavelength_max) / star_intensity;
+            spot.intensity = planck_integral(spot.temperature, wavelength_min, wavelength_max) /
+                star_intensity;
         }
 
-        let mut flux: Vec<f64> = time.iter().map(|t| {
-            self.check_fill_factor(*t);
-            let spot_flux: f64 = self.spots.iter().map(|s| s.get_flux(*t)).sum();
-            (self.star.flux_quiet - spot_flux) / self.star.flux_quiet
-        }).collect();
+        let mut flux: Vec<f64> = time.iter()
+            .map(|t| {
+                self.check_fill_factor(*t);
+                let spot_flux: f64 = self.spots.iter().map(|s| s.get_flux(*t)).sum();
+                (self.star.flux_quiet - spot_flux) / self.star.flux_quiet
+            })
+            .collect();
 
         normalize(&mut flux);
         flux
     }
 
-    pub fn observe_rv(&mut self, time: Vec<f64>, wavelength_min: f64, wavelength_max: f64) -> Vec<Observation> {
+    pub fn observe_rv(
+        &mut self,
+        time: &[f64],
+        wavelength_min: f64,
+        wavelength_max: f64,
+    ) -> Vec<Observation> {
         let mut output = Vec::with_capacity(time.len());
 
         let star_intensity = planck_integral(self.star.temperature, wavelength_min, wavelength_max);
         for spot in &mut self.spots {
-            spot.intensity = planck_integral(spot.temperature, wavelength_min, wavelength_max) / star_intensity;
+            spot.intensity = planck_integral(spot.temperature, wavelength_min, wavelength_max) /
+                star_intensity;
         }
 
-        for t in &time {
+        for t in time.iter() {
             self.check_fill_factor(*t);
         }
 
@@ -152,13 +190,47 @@ impl Simulation {
             }
             normalize(&mut spot_profile);
             let fit_result = fit_rv(&self.star.profile_quiet.rv, &spot_profile, &fit_guess);
-            let rv = (fit_result.centroid - self.star.zero_rv)*1000.0; // TODO km/s
+            let rv = (fit_result.centroid - self.star.zero_rv) * 1000.0; // TODO km/s
 
-            let bisector: Vec<f64> = compute_bisector(&self.star.profile_quiet.rv, &spot_profile).iter()
-                .map(|b| (b - self.star.zero_rv)*1000.0).collect(); // TODO: km/s
+            let bisector: Vec<f64> = compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
+                .iter()
+                .map(|b| (b - self.star.zero_rv) * 1000.0)
+                .collect(); // TODO: km/s
 
-            output.push(Observation{rv: rv, bisector: bisector})
+            output.push(Observation {
+                rv: rv,
+                bisector: bisector,
+            })
         }
         output
+    }
+}
+
+// std::fmt::Display
+impl std::fmt::Debug for Simulation {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        use std::fmt::Write;
+        let mut message = String::new();
+        message.push_str("Star:\n");
+        write!(message, "    period: {}\n", self.star.period)?;
+        write!(message, "    inclination: {}\n", self.star.inclination)?;
+        write!(message, "    temperature: {}\n", self.star.temperature)?;
+        write!(message, "    spot_temp_diff: {}\n", self.star.spot_temp_diff)?;
+        write!(message, "    limb_linear: {}\n", self.star.limb_linear)?;
+        write!(message, "    limb_quadratic: {}\n", self.star.limb_quadratic)?;
+        write!(message, "    grid_size: {}\n", self.star.grid_size)?;
+        message.push_str("Spots:\n");
+        for spot in &self.spots {
+            write!(message, "    latitude: {}\n", spot.latitude)?;
+            write!(message, "    longitude: {}\n", spot.longitude)?;
+            write!(message, "    radius: {}\n", spot.radius)?;
+            write!(message, "    temperature: {}\n", spot.temperature)?;
+            write!(message, "    plage: {}\n", spot.plage)?;
+            write!(message, "    mortal: {}\n", spot.mortal)?;
+            message.push_str("----");
+        }
+        let new_len = message.len()-4;
+        message.truncate(new_len);
+        f.write_str(message.as_str())
     }
 }
