@@ -144,16 +144,13 @@ impl Simulation {
                 star_intensity;
         }
 
-        let mut flux: Vec<f64> = time.iter()
+        time.iter()
             .map(|t| {
                 self.check_fill_factor(*t);
                 let spot_flux: f64 = self.spots.iter().map(|s| s.get_flux(*t)).sum();
                 (self.star.flux_quiet - spot_flux) / self.star.flux_quiet
             })
-            .collect();
-
-        normalize(&mut flux);
-        flux
+            .collect::<Vec<f64>>()
     }
 
     pub fn observe_rv(
@@ -170,11 +167,12 @@ impl Simulation {
                 star_intensity;
         }
 
+        /*
         for t in time.iter() {
             self.check_fill_factor(*t);
-        }
+        }*/
 
-        let fit_guess = self.star.fit_result.clone();
+        let mut fit_guess = self.star.fit_result.clone();
 
         for t in time.iter() {
             let mut spot_profile = vec![0.0; self.star.profile_active.len()];
@@ -189,13 +187,14 @@ impl Simulation {
                 *spot = *star - *spot;
             }
             normalize(&mut spot_profile);
-            let fit_result = fit_rv(&self.star.profile_quiet.rv, &spot_profile, &fit_guess);
-            let rv = (fit_result.centroid - self.star.zero_rv) * 1000.0; // TODO km/s
+            fit_guess = fit_rv(&self.star.profile_quiet.rv, &spot_profile, &fit_guess);
+            let rv = (fit_guess.centroid - self.star.zero_rv) * 1000.0; // TODO km/s
 
             let bisector: Vec<f64> = compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
                 .iter()
                 .map(|b| (b - self.star.zero_rv) * 1000.0)
                 .collect(); // TODO: km/s
+                // TODO: Looks like star.zero_rv is a bit off
 
             output.push(Observation {
                 rv: rv,
@@ -212,19 +211,19 @@ impl std::fmt::Debug for Simulation {
         use std::fmt::Write;
         let mut message = String::new();
         message.push_str("Star:\n");
-        write!(message, "    period: {}\n", self.star.period)?;
-        write!(message, "    inclination: {}\n", self.star.inclination)?;
-        write!(message, "    temperature: {}\n", self.star.temperature)?;
-        write!(message, "    spot_temp_diff: {}\n", self.star.spot_temp_diff)?;
+        write!(message, "    period: {} d\n", self.star.period)?;
+        write!(message, "    inclination: {} rad\n", self.star.inclination)?;
+        write!(message, "    temperature: {} K\n", self.star.temperature)?;
+        write!(message, "    spot_temp_diff: {} K\n", self.star.spot_temp_diff)?;
         write!(message, "    limb_linear: {}\n", self.star.limb_linear)?;
         write!(message, "    limb_quadratic: {}\n", self.star.limb_quadratic)?;
         write!(message, "    grid_size: {}\n", self.star.grid_size)?;
         message.push_str("Spots:\n");
         for spot in &self.spots {
-            write!(message, "    latitude: {}\n", spot.latitude)?;
-            write!(message, "    longitude: {}\n", spot.longitude)?;
+            write!(message, "    latitude: {} rad\n", spot.latitude)?;
+            write!(message, "    longitude: {} rad\n", spot.longitude)?;
             write!(message, "    radius: {}\n", spot.radius)?;
-            write!(message, "    temperature: {}\n", spot.temperature)?;
+            write!(message, "    temperature: {} K\n", spot.temperature)?;
             write!(message, "    plage: {}\n", spot.plage)?;
             write!(message, "    mortal: {}\n", spot.mortal)?;
             message.push_str("----");

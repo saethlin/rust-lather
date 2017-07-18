@@ -45,13 +45,14 @@ impl Spot {
     }
 
     pub fn get_flux(&self, time: f64) -> f64 {
-        let mut limb_integral = 0.0;
         let bounds = BoundingShape::new(self, time);
         let y_bounds = bounds.y_bounds();
-        for y in linspace(y_bounds.lower, y_bounds.upper, self.star.grid_size) {
-            limb_integral += self.star.limb_integral(&bounds.z_bounds(y), y);
-        }
-        limb_integral
+        println!("{}, {}", y_bounds.lower, y_bounds.upper);
+        linspace(y_bounds.lower, y_bounds.upper, self.star.grid_size)
+            .map(|y| {
+                self.star.limb_integral(&bounds.z_bounds(y), y)
+                })
+            .sum()
     }
 
     pub fn get_ccf(&self, time: f64) -> Vec<f64> {

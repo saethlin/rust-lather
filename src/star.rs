@@ -1,6 +1,7 @@
 extern crate std;
 use std::f64::consts;
-
+//extern crate gnuplot;
+//use self::gnuplot::{Figure, AxesCommon, Color};
 
 use profile::Profile;
 use bounds::Bounds;
@@ -19,7 +20,6 @@ pub struct Star {
     pub limb_linear: f64,
     pub limb_quadratic: f64,
     pub grid_size: usize,
-    pub intensity: f64,
     pub flux_quiet: f64,
     pub zero_rv: f64,
     pub equatorial_velocity: f64,
@@ -44,7 +44,7 @@ impl Star {
         let sqrt = f64::sqrt;
 
         let edge_velocity = (2.0 * consts::PI * radius * SOLAR_RADIUS) / (period * DAYS_TO_SECONDS);
-        let equatorial_velocity = edge_velocity * inclination.sin();
+        let equatorial_velocity = edge_velocity * (inclination * consts::PI / 180.0).sin();
 
         let profile_quiet = Profile::new(rv(), ccf_quiet());
         let profile_active = Profile::new(rv(), ccf_active());
@@ -83,10 +83,12 @@ impl Star {
             guess.height * f64::exp(-(x - guess.centroid) * (x - guess.centroid) / (2.0 * guess.width * guess.width)) + guess.offset)
             .collect::<Vec<f64>>();
 
+        use self::gnuplot::AutoOption::Fix;
         let mut rv_fig = Figure::new();
         rv_fig.axes2d()
             .lines(&rv(), &normalized, &[Color("black")])
-            .lines(&rv(), &guess_func, &[Color("red")]);
+            .lines(&rv(), &guess_func, &[Color("red")])
+            .set_x_range(Fix(-0.5), Fix(0.5));
         rv_fig.show();
         */
 
@@ -100,7 +102,6 @@ impl Star {
             limb_linear: limb_linear,
             limb_quadratic: limb_quadratic,
             grid_size: grid_size,
-            intensity: 0.0,
             flux_quiet: flux_quiet,
             zero_rv: initial_fit.centroid,
             equatorial_velocity: equatorial_velocity,

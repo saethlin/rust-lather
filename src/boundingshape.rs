@@ -38,6 +38,7 @@ impl BoundingShape {
         let phase = (time % spot.star.period) / spot.star.period * 2.0 * consts::PI;
         let theta = phase + spot.longitude;
         let phi = consts::FRAC_PI_2 - spot.longitude;
+
         let mut center = Point {
             x: phi.sin() * theta.cos(),
             y: phi.sin() * theta.sin(),
@@ -117,6 +118,8 @@ impl BoundingShape {
         let x_min = self.circle_center.x +
             self.radius * (theta_y_max.cos() * self.b.y + theta_y_max.sin() * self.b.y);
 
+        println!("{}, {}", y_min, y_max);
+
         if x_min < 0.0 && x_max < 0.0 {
             return Bounds::new(0.0, 0.0);
         }
@@ -145,9 +148,15 @@ impl BoundingShape {
         }
 
         z = self.center.z - self.radius;
-        while (z < self.center.z - self.radius) && self.on_spot(y, z) {
+        while (z < self.center.z + self.radius) && self.on_spot(y, z) {
             z_min = z;
             z += self.grid_interval;
+        }
+
+        // Ignore the edge case where brute force misses the spot, even though it's technically visible
+        if z_min > 1.0 || z_max > 1.0 {
+            z_min = 0.0;
+            z_max = 0.0;
         }
 
         Bounds::new(z_min, z_max)
