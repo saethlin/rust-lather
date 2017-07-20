@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 use star::Star;
 use boundingshape::BoundingShape;
-use linspace::linspace;
+use linspace::floatrange;
 
 pub struct Spot {
     pub star: Rc<Star>,
@@ -47,19 +47,17 @@ impl Spot {
     pub fn get_flux(&self, time: f64) -> f64 {
         let bounds = BoundingShape::new(self, time);
         let y_bounds = bounds.y_bounds();
-        println!("{}, {}", y_bounds.lower, y_bounds.upper);
-        linspace(y_bounds.lower, y_bounds.upper, self.star.grid_size)
-            .map(|y| {
-                self.star.limb_integral(&bounds.z_bounds(y), y)
-                })
-            .sum()
+        let limb_integral: f64 = floatrange(y_bounds.lower, y_bounds.upper, 2.0/self.star.grid_size as f64)
+            .map(|y| self.star.limb_integral(&bounds.z_bounds(y), y))
+            .sum();
+        (1.0-self.intensity) * limb_integral
     }
 
     pub fn get_ccf(&self, time: f64) -> Vec<f64> {
         let mut profile = vec![0.0; self.star.profile_active.len()];
         let bounds = BoundingShape::new(self, time);
         let y_bounds = bounds.y_bounds();
-        for y in linspace(y_bounds.lower, y_bounds.upper, self.star.grid_size) {
+        for y in floatrange(y_bounds.lower, y_bounds.upper, 2.0/self.star.grid_size as f64) {
             let quiet_shifted = self.star.profile_quiet.shift(
                 y * self.star.equatorial_velocity,
             );
@@ -69,7 +67,6 @@ impl Spot {
 
             let z_bounds = bounds.z_bounds(y);
             let limb_integral = self.star.limb_integral(&z_bounds, y);
-
             for i in 0..quiet_shifted.len() {
                 profile[i] += (quiet_shifted[i] - self.intensity * active_shifted[i]) *
                     limb_integral;

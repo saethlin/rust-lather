@@ -1,6 +1,7 @@
 extern crate std;
 extern crate ini;
 extern crate rand;
+extern crate gnuplot;
 use std::iter;
 use self::ini::Ini;
 use self::rand::distributions::{Range, LogNormal, IndependentSample};
@@ -167,12 +168,9 @@ impl Simulation {
                 star_intensity;
         }
 
-        /*
         for t in time.iter() {
             self.check_fill_factor(*t);
-        }*/
-
-        let mut fit_guess = self.star.fit_result.clone();
+        }
 
         for t in time.iter() {
             let mut spot_profile = vec![0.0; self.star.profile_active.len()];
@@ -186,15 +184,15 @@ impl Simulation {
             for (spot, star) in spot_profile.iter_mut().zip(self.star.integrated_ccf.iter()) {
                 *spot = *star - *spot;
             }
+
             normalize(&mut spot_profile);
-            fit_guess = fit_rv(&self.star.profile_quiet.rv, &spot_profile, &fit_guess);
-            let rv = (fit_guess.centroid - self.star.zero_rv) * 1000.0; // TODO km/s
+            let rv_fit = fit_rv(&self.star.profile_quiet.rv, &spot_profile, &self.star.fit_result);
+            let rv = (rv_fit.centroid - self.star.zero_rv) * 1000.0; // TODO: km/s
 
             let bisector: Vec<f64> = compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
                 .iter()
                 .map(|b| (b - self.star.zero_rv) * 1000.0)
                 .collect(); // TODO: km/s
-                // TODO: Looks like star.zero_rv is a bit off
 
             output.push(Observation {
                 rv: rv,
@@ -205,7 +203,6 @@ impl Simulation {
     }
 }
 
-// std::fmt::Display
 impl std::fmt::Debug for Simulation {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         use std::fmt::Write;

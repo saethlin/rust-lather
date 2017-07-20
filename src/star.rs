@@ -1,7 +1,5 @@
 extern crate std;
 use std::f64::consts;
-//extern crate gnuplot;
-//use self::gnuplot::{Figure, AxesCommon, Color};
 
 use profile::Profile;
 use bounds::Bounds;
@@ -77,20 +75,6 @@ impl Star {
             width: 2.71,
             offset: normalized[0],
         };
-
-        /*
-        let guess_func = rv().iter().map(|x|
-            guess.height * f64::exp(-(x - guess.centroid) * (x - guess.centroid) / (2.0 * guess.width * guess.width)) + guess.offset)
-            .collect::<Vec<f64>>();
-
-        use self::gnuplot::AutoOption::Fix;
-        let mut rv_fig = Figure::new();
-        rv_fig.axes2d()
-            .lines(&rv(), &normalized, &[Color("black")])
-            .lines(&rv(), &guess_func, &[Color("red")])
-            .set_x_range(Fix(-0.5), Fix(0.5));
-        rv_fig.show();
-        */
 
         let initial_fit = fit_rv(&rv(), &normalized, &guess);
 

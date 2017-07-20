@@ -1,5 +1,6 @@
 extern crate std;
 use std::f64::consts;
+use linspace::floatrange;
 
 use point::Point;
 use spot::Spot;
@@ -14,14 +15,11 @@ pub struct BoundingShape {
     grid_interval: f64,
     max_radius: f64,
     visible: bool,
-    //is_on_edge: bool,
 }
 
 impl BoundingShape {
     pub fn new(spot: &Spot, time: f64) -> Self {
-        let grid_interval = 0.001;
-
-        // TODO: Fix these hacks by implementing Star properly
+        let grid_interval = 2.0 / spot.star.grid_size as f64;
         let mut radius = spot.radius;
         let max_radius = radius;
 
@@ -37,7 +35,7 @@ impl BoundingShape {
 
         let phase = (time % spot.star.period) / spot.star.period * 2.0 * consts::PI;
         let theta = phase + spot.longitude;
-        let phi = consts::FRAC_PI_2 - spot.longitude;
+        let phi = consts::FRAC_PI_2 - spot.latitude;
 
         let mut center = Point {
             x: phi.sin() * theta.cos(),
@@ -73,7 +71,6 @@ impl BoundingShape {
         let x1 = circle_center.x + radius * ((theta_x_max).cos() * a.x + (theta_x_max).sin() * b.x);
         let x2 = circle_center.x + radius * ((theta_x_min).cos() * a.x + (theta_x_min).sin() * b.x);
 
-        //let is_on_edge = x1 < 0.0 || x2 < 0.0;
         let visible = x1 > 0.0 || x2 > 0.0;
 
         BoundingShape {
@@ -85,7 +82,6 @@ impl BoundingShape {
             grid_interval: grid_interval,
             max_radius: max_radius,
             visible: visible,
-            //is_on_edge: is_on_edge,
         }
     }
 
@@ -112,13 +108,10 @@ impl BoundingShape {
         let y_min = self.circle_center.y +
             self.radius * (theta_y_min.cos() * self.a.y + theta_y_min.sin() * self.b.y);
 
-        // TODO: FIX THIS
         let x_max = self.circle_center.x +
             self.radius * (theta_y_max.cos() * self.a.y + theta_y_max.sin() * self.b.y);
         let x_min = self.circle_center.x +
             self.radius * (theta_y_max.cos() * self.b.y + theta_y_max.sin() * self.b.y);
-
-        println!("{}, {}", y_min, y_max);
 
         if x_min < 0.0 && x_max < 0.0 {
             return Bounds::new(0.0, 0.0);
@@ -129,37 +122,39 @@ impl BoundingShape {
         if x_min < 0.0 {
             return Bounds::new(y_max, -1.0);
         }
+
         Bounds::new(y_min, y_max)
     }
-
+    // TODO: Implement a better search algorithm here
     pub fn z_bounds(&self, y: f64) -> Bounds {
         if self.radius == 0.0 {
             return Bounds::new(0.0, 0.0);
         }
 
-        let mut z_max = 2.0;
-        let mut z_min = 2.0;
-        let mut z;
+        let z_max = floatrange(
+            self.center.z + self.radius,
+            self.center.z - self.radius,
+            -self.grid_interval
+        )
+        .take_while(|z| {
+            !self.on_spot(y, *z)
+        })
+        .last();
+        
+        let z_min = floatrange(
+            self.center.z - self.radius,
+            self.center.z + self.radius,
+            self.grid_interval
+        )
+        .take_while(|z| !self.on_spot(y, *z))
+        .last();
 
-        z = self.center.z + self.radius;
-        while (z > self.center.z - self.radius) && self.on_spot(y, z) {
-            z_max = z;
-            z -= self.grid_interval;
+        if z_max.is_none() || z_min.is_none() {
+            Bounds::new(0.0, 0.0)
         }
-
-        z = self.center.z - self.radius;
-        while (z < self.center.z + self.radius) && self.on_spot(y, z) {
-            z_min = z;
-            z += self.grid_interval;
+        else {
+            Bounds::new(z_min.unwrap() + self.grid_interval, z_max.unwrap() - self.grid_interval)
         }
-
-        // Ignore the edge case where brute force misses the spot, even though it's technically visible
-        if z_min > 1.0 || z_max > 1.0 {
-            z_min = 0.0;
-            z_max = 0.0;
-        }
-
-        Bounds::new(z_min, z_max)
     }
 
     pub fn on_spot(&self, y: f64, z: f64) -> bool {

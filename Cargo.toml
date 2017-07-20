@@ -9,12 +9,3 @@ GSL = "*"
 rust-ini = "*"
 itertools = "*"
 gnuplot = "*"
-
-[profile.release]
-opt-level = 3
-debug = false
-rpath = false
-lto = false
-debug-assertions = false
-codegen-units = 1
-panic = 'unwind'

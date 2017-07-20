@@ -52,6 +52,7 @@ fn gauss_df(x: &rgsl::VectorF64, jacobian: &mut rgsl::MatrixF64, data: &Data) ->
     rgsl::Value::Success
 }
 
+// TODO: Can this be written without cloning the input vectors?
 pub fn fit_rv(rv: &Vec<f64>, ccf: &Vec<f64>, guess: &Gaussian) -> Gaussian {
     let mut solver = rgsl::MultiFitFdfSolver::new(&MultiFitFdfSolverType::lmsder(), rv.len(), 4)
         .unwrap();
@@ -65,38 +66,18 @@ pub fn fit_rv(rv: &Vec<f64>, ccf: &Vec<f64>, guess: &Gaussian) -> Gaussian {
 
     let mut solver_func = rgsl::MultiFitFunctionFdf::new(rv.len(), 4);
 
-    /*
-    let gaussb_f =
-        clone!(
-            data => move |x, solver_func| {
-                gauss_f(&x, &mut solver_func, &*data.borrow())
-            }
-        );*/
     let gaussb_f = {
         let data = data.clone();
         move |x, mut solver_func| gauss_f(&x, &mut solver_func, &*data.borrow())
     };
     solver_func.f = Some(Box::new(gaussb_f));
 
-    /*
-    let gaussb_df =
-        clone!(data => move |x, jacobian| {
-        gauss_df(&x, &mut jacobian, &*data.borrow())
-    });*/
     let gaussb_df = {
         let data = data.clone();
         move |x, mut jacobian| gauss_df(&x, &mut jacobian, &*data.borrow())
     };
     solver_func.df = Some(Box::new(gaussb_df));
 
-    /*
-    let gaussb_fdf =
-        clone!(data => move |x, solver_func, jacobian| {
-        gauss_f(&x, &mut solver_func, &*data.borrow());
-        gauss_df(&x, &mut jacobian, &*data.borrow());
-        rgsl::Value::Success
-    });
-    */
     let gaussb_fdf = {
         let data = data.clone();
         move |x, mut solver_func, mut jacobian| {
@@ -113,7 +94,7 @@ pub fn fit_rv(rv: &Vec<f64>, ccf: &Vec<f64>, guess: &Gaussian) -> Gaussian {
         if solver.iterate() != rgsl::Value::Success {
             break;
         }
-        if rgsl::multifit::test_delta(&solver.dx(), &solver.x(), 0.0, 1e-10) != rgsl::Value::Continue {
+        if rgsl::multifit::test_delta(&solver.dx(), &solver.x(), 0.0, 0.0) != rgsl::Value::Continue {
             break;
         }
     }

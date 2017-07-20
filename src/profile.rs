@@ -68,7 +68,7 @@ impl Profile {
             self.ccf.iter().zip(self.derivative.iter())
             .skip((-quotient) as usize)
             .map(|(ccf, der)| ccf - remainder * der)
-            .chain(iter::repeat(self.ccf[0]).take((-quotient) as usize))  // TODO is this +1 correct?
+            .chain(iter::repeat(self.ccf[0]).take((-quotient) as usize))
             .collect::<Vec<f64>>()
         }
     }
