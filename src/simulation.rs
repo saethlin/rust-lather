@@ -246,7 +246,7 @@ impl std::fmt::Debug for Simulation {
             write!(message, "    mortal: {}\n", spot.mortal)?;
             message.push_str("----");
         }
-        let new_len = message.len() - 4;
+        let new_len = message.len() - 5;
         message.truncate(new_len);
         f.write_str(message.as_str())
     }

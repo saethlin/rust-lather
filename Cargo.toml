@@ -3,9 +3,18 @@ name = "rather"
 version = "0.1.0"
 authors = ["saethlin <kimockb@gmail.com>"]
 
+[lib]
+name = "rather"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
 [dependencies]
 rand = "*"
 GSL = "*"
 rust-ini = "*"
 itertools = "*"
 gnuplot = "*"
+
+[dependencies.cpython]
+version = "*"
+features = ["extension-module"]
