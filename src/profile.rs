@@ -3,7 +3,6 @@ use std::iter;
 
 /// A cross-correlation profile, which stores its derivative inline to enable
 /// fast linear interpolation
-#[derive(Debug)]
 pub struct Profile {
     pub rv: Vec<f64>,
     pub ccf: Vec<f64>,
@@ -11,7 +10,7 @@ pub struct Profile {
     stepsize: f64,
 }
 
-
+// TODO: Based on perf data, adding a cache could be worth about 10% total
 impl Profile {
     /// Creates a profile with the provided radial velocity and
     /// cross-correlation function, and computes the derivative to enable fast
@@ -26,7 +25,7 @@ impl Profile {
             .zip(rv_diff)
             .map(|(c, r)| c / r)
             .chain(std::iter::once(0.0))
-            .collect::<Vec<f64>>();
+            .collect();
 
         Profile {
             rv: rv.clone(),
@@ -36,13 +35,9 @@ impl Profile {
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.rv.len()
-    }
+    pub fn len(&self) -> usize { self.rv.len() }
 
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
+    pub fn is_empty(&self) -> bool { self.len() == 0 }
 
     pub fn shift(&self, velocity: f64) -> Vec<f64> {
         /// Uses the pre-computed derivative to compute a shifted version of
@@ -63,13 +58,15 @@ impl Profile {
                         .take(self.ccf.len() - quotient as usize)
                         .map(|(ccf, der)| ccf - remainder * der),
                 )
-                .collect::<Vec<f64>>()
+                .collect()
         } else {
-            self.ccf.iter().zip(self.derivative.iter())
-            .skip((-quotient) as usize)
-            .map(|(ccf, der)| ccf - remainder * der)
-            .chain(iter::repeat(self.ccf[0]).take((-quotient) as usize))
-            .collect::<Vec<f64>>()
+            self.ccf
+                .iter()
+                .zip(self.derivative.iter())
+                .skip((-quotient) as usize)
+                .map(|(ccf, der)| ccf - remainder * der)
+                .chain(iter::repeat(self.ccf[0]).take((-quotient) as usize))
+                .collect()
         }
     }
 }

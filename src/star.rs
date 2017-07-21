@@ -6,6 +6,7 @@ use bounds::Bounds;
 use sun_ccfs::*;
 use fit_rv::{Gaussian, fit_rv};
 use simulation::normalize;
+use linspace::linspace;
 
 static SOLAR_RADIUS: f64 = 696000.0; // TODO: km/s
 static DAYS_TO_SECONDS: f64 = 86400.0;
@@ -29,14 +30,8 @@ pub struct Star {
 
 impl Star {
     pub fn new(
-        radius: f64,
-        period: f64,
-        inclination: f64,
-        temperature: f64,
-        spot_temp_diff: f64,
-        limb_linear: f64,
-        limb_quadratic: f64,
-        grid_size: usize,
+        radius: f64, period: f64, inclination: f64, temperature: f64, spot_temp_diff: f64,
+        limb_linear: f64, limb_quadratic: f64, grid_size: usize
     ) -> Self {
 
         let sqrt = f64::sqrt;
@@ -49,19 +44,18 @@ impl Star {
 
         let mut integrated_ccf = vec![0.0; ccf_quiet().len()];
         let mut flux_quiet = 0.0;
-        let grid_step = 2.0 / grid_size as f64;
 
-        for y in (0..grid_size + 1).map(|a| (a as f64 * grid_step) - 1.0) {
+        for y in linspace(-1.0, 1.0, grid_size) {
             let ccf_shifted = profile_quiet.shift(y * equatorial_velocity);
-            let z_bound = sqrt(1.0 - y * y);
+            let z_bound = sqrt(1.0 - y.powi(2));
             let limb_integral = limb_integral(
                 &Bounds::new(-z_bound, z_bound),
                 y,
                 limb_linear,
                 limb_quadratic,
             );
-            for i in 0..integrated_ccf.len() {
-                integrated_ccf[i] += ccf_shifted[i] * limb_integral;
+            for (tot, shifted) in integrated_ccf.iter_mut().zip(ccf_shifted.iter()) {
+                *tot += *shifted * limb_integral;
             }
             flux_quiet += limb_integral;
         }
@@ -70,8 +64,8 @@ impl Star {
         normalize(&mut normalized);
 
         let guess = Gaussian {
-            height: normalized[normalized.len()/2]-normalized[0],
-            centroid: profile_quiet.rv[normalized.len()/2],
+            height: normalized[normalized.len() / 2] - normalized[0],
+            centroid: profile_quiet.rv[normalized.len() / 2],
             width: 2.71,
             offset: normalized[0],
         };
@@ -151,4 +145,3 @@ impl std::fmt::Debug for Star {
             .finish()
     }
 }
-

@@ -3,7 +3,7 @@ extern crate alloc_system;
 
 extern crate rather;
 extern crate gnuplot;
-use gnuplot::{Figure, AxesCommon, Color, PointSymbol};
+use gnuplot::{AxesCommon, Color, Figure, PointSymbol};
 
 use rather::simulation::Simulation;
 use rather::linspace::linspace;
@@ -21,12 +21,12 @@ fn main() {
         let fluxes = sim.observe_flux(&time, 4000e-10, 5000e-10);
         if plots {
             let mut flux_fig = Figure::new();
-            flux_fig.axes2d()
+            flux_fig
+                .axes2d()
                 .points(&time, fluxes, &[Color("black"), PointSymbol('O')])
                 .set_title("Flux Observations", &[]);
             flux_fig.show();
-        }
-        else {
+        } else {
             println!("{:?}", fluxes);
         }
     }
@@ -36,12 +36,12 @@ fn main() {
         let rv_values: Vec<f64> = rv_obs.iter().map(|obs| obs.rv).collect();
         if plots {
             let mut rv_fig = Figure::new();
-            rv_fig.axes2d()
+            rv_fig
+                .axes2d()
                 .points(&time, rv_values, &[Color("black"), PointSymbol('O')])
                 .set_title("RV Observations", &[]);
             rv_fig.show();
-        }
-        else {
+        } else {
             for r in rv_values.iter() {
                 println!("{}", r);
             }

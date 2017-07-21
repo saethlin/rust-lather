@@ -10,10 +10,10 @@ pub fn linspace(start: f64, stop: f64, len: usize) -> Linspace {
 }
 
 pub struct Linspace {
-    start: f64,
-    len: usize,
-    step: f64,
     index: usize,
+    len: usize,
+    start: f64,
+    step: f64,
 }
 
 impl Iterator for Linspace {
@@ -31,27 +31,28 @@ impl Iterator for Linspace {
 
 pub fn floatrange(start: f64, stop: f64, step: f64) -> Floatrange {
     Floatrange {
-        current: start,
-        stop: stop,
+        index: 0,
+        len: ((stop - start) / step) as usize,
+        start: start,
         step: step,
     }
 }
 
 pub struct Floatrange {
-    current: f64,
-    stop: f64,
+    index: usize,
+    len: usize,
+    start: f64,
     step: f64,
 }
 
 impl Iterator for Floatrange {
     type Item = f64;
     fn next(&mut self) -> Option<f64> {
-        // TODO: There must be a neater way to implement this
-        if (self.stop == self.current) || ((self.stop - self.current).is_sign_positive() != self.step.is_sign_positive()) {
+        if self.index == self.len {
             None
         } else {
-            let output = Some(self.current);
-            self.current += self.step;
+            let output = Some(self.start + self.step * (self.index as f64));
+            self.index += 1;
             output
         }
     }

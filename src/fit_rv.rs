@@ -28,7 +28,7 @@ fn gauss_f(x: &rgsl::VectorF64, f: &mut rgsl::VectorF64, data: &Data) -> rgsl::V
 
     for (i, (x, y)) in data.x.iter().zip(data.y.iter()).enumerate() {
         let fit = height * exp(-(x - centroid) * (x - centroid) / (2.0 * width * width)) + offset;
-        f.set(i, fit-y);
+        f.set(i, fit - y);
     }
 
     rgsl::Value::Success
@@ -45,7 +45,11 @@ fn gauss_df(x: &rgsl::VectorF64, jacobian: &mut rgsl::MatrixF64, data: &Data) ->
         let tmp = height * exp(-(x - centroid) * (x - centroid) / (2.0 * width * width));
         jacobian.set(i, 0, tmp / height);
         jacobian.set(i, 1, tmp * (x - centroid) / (width * width));
-        jacobian.set(i, 2, tmp * (x - centroid) * (x - centroid) / (width * width * width));
+        jacobian.set(
+            i,
+            2,
+            tmp * (x - centroid) * (x - centroid) / (width * width * width),
+        );
         jacobian.set(i, 3, 1.0);
     }
 
@@ -53,13 +57,13 @@ fn gauss_df(x: &rgsl::VectorF64, jacobian: &mut rgsl::MatrixF64, data: &Data) ->
 }
 
 // TODO: Can this be written without cloning the input vectors?
-pub fn fit_rv(rv: &Vec<f64>, ccf: &Vec<f64>, guess: &Gaussian) -> Gaussian {
+pub fn fit_rv(rv: &[f64], ccf: &[f64], guess: &Gaussian) -> Gaussian {
     let mut solver = rgsl::MultiFitFdfSolver::new(&MultiFitFdfSolverType::lmsder(), rv.len(), 4)
         .unwrap();
 
     let data = Rc::new(RefCell::new(Data {
-        x: rv.clone(),
-        y: ccf.clone(),
+        x: rv.to_vec(),
+        y: ccf.to_vec(),
     }));
     let mut x_init: [f64; 4] = [guess.height, guess.centroid, guess.width, guess.offset];
     let mut x = rgsl::VectorView::from_array(&mut x_init);
@@ -94,12 +98,14 @@ pub fn fit_rv(rv: &Vec<f64>, ccf: &Vec<f64>, guess: &Gaussian) -> Gaussian {
         if solver.iterate() != rgsl::Value::Success {
             break;
         }
-        if rgsl::multifit::test_delta(&solver.dx(), &solver.x(), 0.0, 0.0) != rgsl::Value::Continue {
+        if rgsl::multifit::test_delta(&solver.dx(), &solver.x(), 0.0, 0.0) !=
+            rgsl::Value::Continue
+        {
             break;
         }
     }
 
-     Gaussian {
+    Gaussian {
         height: solver.x().get(0),
         centroid: solver.x().get(1),
         width: solver.x().get(2),

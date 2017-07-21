@@ -1,14 +1,15 @@
 extern crate std;
 extern crate itertools;
 use std::f64::consts;
-use std::rc::Rc;
+use std::sync::Arc;
+use self::itertools::cons_tuples;
 
 use star::Star;
 use boundingshape::BoundingShape;
 use linspace::floatrange;
 
 pub struct Spot {
-    pub star: Rc<Star>,
+    pub star: Arc<Star>,
     pub latitude: f64,
     pub longitude: f64,
     pub radius: f64,
@@ -21,14 +22,8 @@ pub struct Spot {
 }
 
 impl Spot {
-    pub fn new(
-        star: Rc<Star>,
-        latitude: f64,
-        longitude: f64,
-        fillfactor: f64,
-        plage: bool,
-        mortal: bool,
-    ) -> Self {
+    pub fn new(star: Arc<Star>, latitude: f64, longitude: f64, fillfactor: f64, plage: bool, mortal: bool)
+        -> Self {
         let temperature = star.temperature - star.spot_temp_diff;
         Spot {
             star: star,
@@ -47,17 +42,25 @@ impl Spot {
     pub fn get_flux(&self, time: f64) -> f64 {
         let bounds = BoundingShape::new(self, time);
         let y_bounds = bounds.y_bounds();
-        let limb_integral: f64 = floatrange(y_bounds.lower, y_bounds.upper, 2.0/self.star.grid_size as f64)
-            .map(|y| self.star.limb_integral(&bounds.z_bounds(y), y))
+        let limb_integral: f64 = floatrange(
+            y_bounds.lower,
+            y_bounds.upper,
+            2.0 / self.star.grid_size as f64,
+        ).map(|y| self.star.limb_integral(&bounds.z_bounds(y), y))
             .sum();
-        (1.0-self.intensity) * limb_integral
+        (1.0 - self.intensity) * limb_integral
     }
 
     pub fn get_ccf(&self, time: f64) -> Vec<f64> {
         let mut profile = vec![0.0; self.star.profile_active.len()];
         let bounds = BoundingShape::new(self, time);
         let y_bounds = bounds.y_bounds();
-        for y in floatrange(y_bounds.lower, y_bounds.upper, 2.0/self.star.grid_size as f64) {
+        for y in floatrange(
+            y_bounds.lower,
+            y_bounds.upper,
+            2.0 / self.star.grid_size as f64,
+        )
+        {
             let quiet_shifted = self.star.profile_quiet.shift(
                 y * self.star.equatorial_velocity,
             );
@@ -67,9 +70,12 @@ impl Spot {
 
             let z_bounds = bounds.z_bounds(y);
             let limb_integral = self.star.limb_integral(&z_bounds, y);
-            for i in 0..quiet_shifted.len() {
-                profile[i] += (quiet_shifted[i] - self.intensity * active_shifted[i]) *
-                    limb_integral;
+            for (tot, qshift, ashift) in
+                cons_tuples(profile.iter_mut().zip(quiet_shifted.iter()).zip(
+                    active_shifted.iter(),
+                ))
+            {
+                *tot += (qshift - self.intensity * ashift) * limb_integral;
             }
         }
         profile
@@ -101,4 +107,3 @@ impl std::fmt::Debug for Spot {
             .finish()
     }
 }
-

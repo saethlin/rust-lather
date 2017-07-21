@@ -3,9 +3,10 @@ extern crate ini;
 extern crate rand;
 extern crate gnuplot;
 use std::iter;
+use std::sync::RwLock;
 use self::ini::Ini;
-use self::rand::distributions::{Range, LogNormal, IndependentSample};
-use std::rc::Rc;
+use self::rand::distributions::{IndependentSample, LogNormal, Range};
+use std::sync::Arc;
 use planck::planck_integral;
 use fit_rv::fit_rv;
 use compute_bisector::compute_bisector;
@@ -19,10 +20,10 @@ pub struct Observation {
 }
 
 pub struct Simulation {
-    star: Rc<Star>,
+    star: Arc<Star>,
     spots: Vec<Spot>,
     dynamic_fill_factor: f64,
-    generator: rand::ThreadRng,
+    generator: Arc<RwLock<rand::XorShiftRng>>,
 }
 
 pub fn normalize(vector: &mut Vec<f64>) {
@@ -36,10 +37,21 @@ impl Simulation {
     pub fn new(filename: &str) -> Simulation {
         let file = Ini::load_from_file(filename).unwrap();
 
-        let star = file.section(Some("star")).unwrap();
-        let radius = star.get("radius").unwrap().parse::<f64>().unwrap();
-        let period = star.get("period").unwrap().parse::<f64>().unwrap();
-        let inclination = star.get("inclination").unwrap().parse::<f64>().unwrap();
+        let star = file.section(Some("star")).expect(
+            "Missing star section in config file",
+        );
+        let radius = star.get("radius")
+            .expect("Missing star radius in config file")
+            .parse::<f64>()
+            .unwrap();
+        let period = star.get("period")
+            .expect("Missing star rotational period in config file")
+            .parse::<f64>()
+            .unwrap();
+        let inclination = star.get("inclination")
+            .expect("Missint star inclination in config file")
+            .parse::<f64>()
+            .unwrap();
         let temperature = star.get("Tstar").unwrap().parse::<f64>().unwrap();
         let spot_temp_diff = star.get("Tdiff_spot").unwrap().parse::<f64>().unwrap();
         let limb_linear = star.get("limb1").unwrap().parse::<f64>().unwrap();
@@ -51,7 +63,7 @@ impl Simulation {
             .unwrap();
 
         let mut this = Simulation {
-            star: Rc::new(Star::new(
+            star: Arc::new(Star::new(
                 radius,
                 period,
                 inclination,
@@ -63,7 +75,7 @@ impl Simulation {
             )),
             spots: Vec::new(),
             dynamic_fill_factor: dynamic_fill_factor,
-            generator: rand::thread_rng(),
+            generator: Arc::new(RwLock::new(rand::XorShiftRng::new_unseeded())),
         };
 
         for spot in file.iter()
@@ -101,44 +113,45 @@ impl Simulation {
         let lat_range = Range::new(-30.0, 30.0);
         let long_range = Range::new(0.0, 360.0);
 
-        while current_fill_factor < self.dynamic_fill_factor {
-
-            let new_fill_factor = iter::repeat(())
-                .map(|_| fill_range.ind_sample(&mut self.generator) * 9.4e-6)
-                .find(|v| *v < 0.001)
-                .unwrap();
-
-            let mut new_spot = Spot::new(
-                self.star.clone(),
-                lat_range.ind_sample(&mut self.generator),
-                long_range.ind_sample(&mut self.generator),
-                new_fill_factor,
-                false,
-                true,
+        if current_fill_factor < self.dynamic_fill_factor {
+            let mut generator = self.generator.write().expect(
+                "Simulation RNG lock was poisoned by another panic",
             );
-            new_spot.time_appear += time;
-            new_spot.time_disappear += time;
 
-            let collides = self.spots
-                .iter()
-                .filter(|s| {
-                    s.alive(new_spot.time_appear) || s.alive(new_spot.time_disappear)
-                })
-                .any(|s| new_spot.collides_with(s));
+            while current_fill_factor < self.dynamic_fill_factor {
+                let new_fill_factor = iter::repeat(())
+                    .map(|_| fill_range.ind_sample(&mut *generator) * 9.4e-6)
+                    .find(|v| *v < 0.001)
+                    .unwrap();
 
-            if !collides {
-                current_fill_factor += (new_spot.radius * new_spot.radius) / 2.0;
-                self.spots.push(new_spot);
+                let mut new_spot = Spot::new(
+                    self.star.clone(),
+                    lat_range.ind_sample(&mut *generator),
+                    long_range.ind_sample(&mut *generator),
+                    new_fill_factor,
+                    false,
+                    true,
+                );
+                new_spot.time_appear += time;
+                new_spot.time_disappear += time;
+
+                let collides = self.spots
+                    .iter()
+                    .filter(|s| {
+                        s.alive(new_spot.time_appear) || s.alive(new_spot.time_disappear)
+                    })
+                    .any(|s| new_spot.collides_with(s));
+
+                if !collides {
+                    current_fill_factor += (new_spot.radius * new_spot.radius) / 2.0;
+                    self.spots.push(new_spot);
+                }
             }
         }
     }
 
-    pub fn observe_flux(
-        &mut self,
-        time: &[f64],
-        wavelength_min: f64,
-        wavelength_max: f64,
-    ) -> Vec<f64> {
+    pub fn observe_flux(&mut self, time: &[f64], wavelength_min: f64, wavelength_max: f64)
+        -> Vec<f64> {
         let star_intensity = planck_integral(self.star.temperature, wavelength_min, wavelength_max);
         for spot in &mut self.spots {
             spot.intensity = planck_integral(spot.temperature, wavelength_min, wavelength_max) /
@@ -151,15 +164,11 @@ impl Simulation {
                 let spot_flux: f64 = self.spots.iter().map(|s| s.get_flux(*t)).sum();
                 (self.star.flux_quiet - spot_flux) / self.star.flux_quiet
             })
-            .collect::<Vec<f64>>()
+            .collect()
     }
 
-    pub fn observe_rv(
-        &mut self,
-        time: &[f64],
-        wavelength_min: f64,
-        wavelength_max: f64,
-    ) -> Vec<Observation> {
+    pub fn observe_rv(&mut self, time: &[f64], wavelength_min: f64, wavelength_max: f64)
+        -> Vec<Observation> {
         let mut output = Vec::with_capacity(time.len());
 
         let star_intensity = planck_integral(self.star.temperature, wavelength_min, wavelength_max);
@@ -186,7 +195,11 @@ impl Simulation {
             }
 
             normalize(&mut spot_profile);
-            let rv_fit = fit_rv(&self.star.profile_quiet.rv, &spot_profile, &self.star.fit_result);
+            let rv_fit = fit_rv(
+                &self.star.profile_quiet.rv,
+                &spot_profile,
+                &self.star.fit_result,
+            );
             let rv = (rv_fit.centroid - self.star.zero_rv) * 1000.0; // TODO: km/s
 
             let bisector: Vec<f64> = compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
@@ -211,9 +224,17 @@ impl std::fmt::Debug for Simulation {
         write!(message, "    period: {} d\n", self.star.period)?;
         write!(message, "    inclination: {} rad\n", self.star.inclination)?;
         write!(message, "    temperature: {} K\n", self.star.temperature)?;
-        write!(message, "    spot_temp_diff: {} K\n", self.star.spot_temp_diff)?;
+        write!(
+            message,
+            "    spot_temp_diff: {} K\n",
+            self.star.spot_temp_diff
+        )?;
         write!(message, "    limb_linear: {}\n", self.star.limb_linear)?;
-        write!(message, "    limb_quadratic: {}\n", self.star.limb_quadratic)?;
+        write!(
+            message,
+            "    limb_quadratic: {}\n",
+            self.star.limb_quadratic
+        )?;
         write!(message, "    grid_size: {}\n", self.star.grid_size)?;
         message.push_str("Spots:\n");
         for spot in &self.spots {
@@ -225,7 +246,7 @@ impl std::fmt::Debug for Simulation {
             write!(message, "    mortal: {}\n", spot.mortal)?;
             message.push_str("----");
         }
-        let new_len = message.len()-4;
+        let new_len = message.len() - 4;
         message.truncate(new_len);
         f.write_str(message.as_str())
     }

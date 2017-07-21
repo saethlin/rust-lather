@@ -1,6 +1,5 @@
 extern crate std;
 use std::f64::consts;
-use linspace::floatrange;
 
 use point::Point;
 use spot::Spot;
@@ -12,14 +11,12 @@ pub struct BoundingShape {
     a: Point,
     b: Point,
     radius: f64,
-    grid_interval: f64,
     max_radius: f64,
     visible: bool,
 }
 
 impl BoundingShape {
     pub fn new(spot: &Spot, time: f64) -> Self {
-        let grid_interval = 2.0 / spot.star.grid_size as f64;
         let mut radius = spot.radius;
         let max_radius = radius;
 
@@ -44,19 +41,18 @@ impl BoundingShape {
         };
         center.rotate_y(spot.star.inclination - consts::FRAC_PI_2);
 
-        let depth = (1.0 - radius * radius).sqrt();
+        let depth = (1.0 - radius.powi(2)).sqrt();
         let circle_center = Point {
             x: center.x * depth,
             y: center.y * depth,
             z: center.z * depth,
         };
 
-        let a_y = -circle_center.z /
-            (circle_center.y * circle_center.y + circle_center.z * circle_center.z).sqrt();
+        let a_y = -circle_center.z / (circle_center.y.powi(2) + circle_center.z.powi(2)).sqrt();
         let a = Point {
             x: 0.0,
             y: a_y,
-            z: (1.0 - a_y * a_y).sqrt(),
+            z: (1.0 - a_y.powi(2)).sqrt(),
         };
 
         let b = Point {
@@ -65,8 +61,8 @@ impl BoundingShape {
             z: circle_center.x * a.y - circle_center.y * a.x,
         };
 
-        let theta_x_max = -2.0 * ((a.x - (a.x * a.x + b.x * b.x).sqrt()) / b.x).atan();
-        let theta_x_min = -2.0 * ((a.x + (a.x * a.x + b.x * b.x).sqrt()) / b.x).atan();
+        let theta_x_max = -2.0 * ((a.x - (a.x.powi(2) + b.x.powi(2)).sqrt()) / b.x).atan();
+        let theta_x_min = -2.0 * ((a.x + (a.x.powi(2) + b.x.powi(2)).sqrt()) / b.x).atan();
 
         let x1 = circle_center.x + radius * ((theta_x_max).cos() * a.x + (theta_x_max).sin() * b.x);
         let x2 = circle_center.x + radius * ((theta_x_min).cos() * a.x + (theta_x_min).sin() * b.x);
@@ -79,7 +75,6 @@ impl BoundingShape {
             a: a,
             b: b,
             radius: radius,
-            grid_interval: grid_interval,
             max_radius: max_radius,
             visible: visible,
         }
@@ -91,14 +86,12 @@ impl BoundingShape {
         }
 
         let theta_y_min = if self.b.y != 0.0 {
-            -2.0 *
-                ((self.a.y + (self.a.y * self.a.y + self.b.y * self.b.y).sqrt()) / self.b.y).atan()
+            -2.0 * ((self.a.y + (self.a.y.powi(2) + self.b.y.powi(2)).sqrt()) / self.b.y).atan()
         } else {
             0.0
         };
         let theta_y_max = if self.b.y != 0.0 {
-            -2.0 *
-                ((self.a.y - (self.a.y * self.a.y + self.b.y * self.b.y).sqrt()) / self.b.y).atan()
+            -2.0 * ((self.a.y - (self.a.y.powi(2) + self.b.y.powi(2)).sqrt()) / self.b.y).atan()
         } else {
             consts::PI
         };
@@ -125,48 +118,25 @@ impl BoundingShape {
 
         Bounds::new(y_min, y_max)
     }
-    // TODO: Implement a better search algorithm here
+
     pub fn z_bounds(&self, y: f64) -> Bounds {
         if self.radius == 0.0 {
             return Bounds::new(0.0, 0.0);
         }
-
-        let z_max = floatrange(
-            self.center.z + self.radius,
-            self.center.z - self.radius,
-            -self.grid_interval
-        )
-        .take_while(|z| {
-            !self.on_spot(y, *z)
-        })
-        .last();
-        
-        let z_min = floatrange(
-            self.center.z - self.radius,
-            self.center.z + self.radius,
-            self.grid_interval
-        )
-        .take_while(|z| !self.on_spot(y, *z))
-        .last();
-
-        if z_max.is_none() || z_min.is_none() {
-            Bounds::new(0.0, 0.0)
+        let y_mod = (y - self.circle_center.y) / self.radius;
+        let tmp = (self.a.y.powi(2) + self.b.y.powi(2) - y_mod.powi(2)).sqrt();
+        if tmp.is_nan() {
+            return Bounds::new(0.0, 0.0);
         }
-        else {
-            Bounds::new(z_min.unwrap() + self.grid_interval, z_max.unwrap() - self.grid_interval)
-        }
-    }
+        let theta1 = 2.0 * ((self.b.y + tmp) / (self.a.y + y_mod)).atan();
+        let theta2 = 2.0 * ((self.b.y - tmp) / (self.a.y + y_mod)).atan();
 
-    pub fn on_spot(&self, y: f64, z: f64) -> bool {
-        if !on_star(y, z) {
-            return false;
-        }
-        let x = (1.0 - (y * y + z * z)).sqrt();
-        let distance_squared = (y - self.circle_center.y) * (y - self.circle_center.y) +
-            (z - self.circle_center.z) * (z - self.circle_center.z) +
-            (x - self.circle_center.x) * (x - self.circle_center.x);
+        let z1: f64 = self.circle_center.z +
+            self.radius * (self.a.z * theta1.cos() + self.b.z * theta1.sin());
+        let z2: f64 = self.circle_center.z +
+            self.radius * (self.a.z * theta2.cos() + self.b.z * theta2.sin());
 
-        distance_squared <= (self.radius * self.radius)
+        Bounds::new(z2, z1)
     }
 
     pub fn collides_with(&self, other: &BoundingShape) -> bool {
@@ -176,8 +146,4 @@ impl BoundingShape {
             .sqrt();
         distance < (self.max_radius + other.max_radius)
     }
-}
-
-fn on_star(y: f64, z: f64) -> bool {
-    (y * y + z * z) <= 1.0
 }
