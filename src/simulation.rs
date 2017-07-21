@@ -1,9 +1,9 @@
 extern crate std;
 extern crate ini;
 extern crate rand;
-extern crate gnuplot;
 use std::iter;
 use std::sync::RwLock;
+use std::fmt::Write;
 use self::ini::Ini;
 use self::rand::distributions::{IndependentSample, LogNormal, Range};
 use std::sync::Arc;
@@ -33,73 +33,92 @@ pub fn normalize(vector: &mut Vec<f64>) {
     }
 }
 
+macro_rules! get {
+(&mut $error:ident, $file:ident, $filename:ident, $section:expr, $field:expr, $type:ty) => (
+    { let default_string = "1.0".to_owned();
+    $file.section(Some($section)).unwrap().get($field)
+        .unwrap_or_else(|| {
+            writeln!(
+                $error,
+                "Missing field {} of section {} in config file {}",
+                $field,
+                $section,
+                $filename).unwrap();
+            &default_string
+        })
+        .parse::<$type>()
+        .unwrap_or_else(|_| {
+            writeln!(
+                $error,
+                "Cannot parse field {} of section {} in config file {}",
+                $field,
+                $section,
+                $filename).unwrap();
+            <$type as Default>::default()
+        })
+    }
+)
+}
+
 impl Simulation {
     pub fn new(filename: &str) -> Simulation {
-        let file = Ini::load_from_file(filename).unwrap();
+        let mut error = String::new();
+        let file = Ini::load_from_file(filename).expect(&format!(
+            "Could not open config file {}",
+            filename
+        ));
 
-        let star = file.section(Some("star")).expect(
-            "Missing star section in config file",
-        );
-        let radius = star.get("radius")
-            .expect("Missing star radius in config file")
-            .parse::<f64>()
-            .unwrap();
-        let period = star.get("period")
-            .expect("Missing star rotational period in config file")
-            .parse::<f64>()
-            .unwrap();
-        let inclination = star.get("inclination")
-            .expect("Missint star inclination in config file")
-            .parse::<f64>()
-            .unwrap();
-        let temperature = star.get("Tstar").unwrap().parse::<f64>().unwrap();
-        let spot_temp_diff = star.get("Tdiff_spot").unwrap().parse::<f64>().unwrap();
-        let limb_linear = star.get("limb1").unwrap().parse::<f64>().unwrap();
-        let limb_quadratic = star.get("limb2").unwrap().parse::<f64>().unwrap();
-        let dynamic_fill_factor = star.get("fillfactor").unwrap().parse::<f64>().unwrap();
-        let grid_size = star.get("grid_resolution")
-            .unwrap()
-            .parse::<usize>()
-            .unwrap();
+        file.section(Some("star")).expect(&format!(
+            "Missing section start in config file {}",
+            filename
+        ));
 
-        let mut this = Simulation {
-            star: Arc::new(Star::new(
-                radius,
-                period,
-                inclination,
-                temperature,
-                spot_temp_diff,
-                limb_linear,
-                limb_quadratic,
-                grid_size,
-            )),
-            spots: Vec::new(),
-            dynamic_fill_factor: dynamic_fill_factor,
-            generator: Arc::new(RwLock::new(rand::XorShiftRng::new_unseeded())),
-        };
+        let radius = get!(&mut error, file, filename, "star", "radius", f64);
+        let period = get!(&mut error, file, filename, "star", "period", f64);
+        let inclination = get!(&mut error, file, filename, "star", "inclination", f64);
+        let temperature = get!(&mut error, file, filename, "star", "Tstar", f64);
+        let spot_temp_diff = get!(&mut error, file, filename, "star", "Tdiff_spot", f64);
+        let limb_linear = get!(&mut error, file, filename, "star", "limb1", f64);
+        let limb_quadratic = get!(&mut error, file, filename, "star", "limb2", f64);
+        let dynamic_fill_factor = get!(&mut error, file, filename, "star", "fillfactor", f64);
+        let grid_size = get!(&mut error, file, filename, "star", "grid_resolution", usize);
 
-        for spot in file.iter()
+        let star = Arc::new(Star::new(
+            radius,
+            period,
+            inclination,
+            temperature,
+            spot_temp_diff,
+            limb_linear,
+            limb_quadratic,
+            grid_size,
+        ));
+
+        let spots: Vec<Spot> = file.iter()
             .filter(|&(s, _)| s.to_owned().is_some())
             .filter(|&(s, _)| s.to_owned().unwrap().as_str().starts_with("spot"))
-            .map(|(_, p)| p)
-        {
+            .map(|(section, _)| {
+                let sec = section.clone().unwrap();
+                let latitude = get!(&mut error, file, filename, sec.as_str(), "latitude", f64);
+                let longitude = get!(&mut error, file, filename, sec.as_str(), "longitude", f64);
+                let size = get!(&mut error, file, filename, sec.as_str(), "size", f64);
+                let plage = get!(&mut error, file, filename, sec.as_str(), "plage", bool);
 
-            let latitude = spot.get("latitude").unwrap().parse::<f64>().unwrap();
-            let longitude = spot.get("longitude").unwrap().parse::<f64>().unwrap();
-            let size = spot.get("size").unwrap().parse::<f64>().unwrap();
-            let plage = spot.get("plage").unwrap().parse::<bool>().unwrap();
+                Spot::new(star.clone(), latitude, longitude, size, plage, false)
+            })
+            .collect();
 
-            this.spots.push(Spot::new(
-                this.star.clone(),
-                latitude,
-                longitude,
-                size,
-                plage,
-                false,
-            ));
+        if !error.is_empty() {
+            panic!("One or more errors loading config file");
         }
 
-        this
+        Simulation {
+            star: star,
+            spots: spots,
+            dynamic_fill_factor: dynamic_fill_factor,
+            generator: Arc::new(RwLock::new(rand::XorShiftRng::new_unseeded())),
+        }
+
     }
 
     fn check_fill_factor(&mut self, time: f64) {
@@ -200,12 +219,12 @@ impl Simulation {
                 &spot_profile,
                 &self.star.fit_result,
             );
-            let rv = (rv_fit.centroid - self.star.zero_rv) * 1000.0; // TODO: km/s
+            let rv = rv_fit.centroid - self.star.zero_rv;
 
             let bisector: Vec<f64> = compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
                 .iter()
-                .map(|b| (b - self.star.zero_rv) * 1000.0)
-                .collect(); // TODO: km/s
+                .map(|b| b - self.star.zero_rv)
+                .collect();
 
             output.push(Observation {
                 rv: rv,

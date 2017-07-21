@@ -1,12 +1,11 @@
 extern crate test;
 
-use simulation::Simulation;
-use linspace::linspace;
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use self::test::Bencher;
+    use simulation::Simulation;
+    use linspace::linspace;
 
     #[bench]
     fn observe_flux(b: &mut Bencher) {

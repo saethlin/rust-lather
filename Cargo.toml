@@ -13,7 +13,6 @@ rand = "*"
 GSL = "*"
 rust-ini = "*"
 itertools = "*"
-gnuplot = "*"
 
 [dependencies.cpython]
 version = "*"

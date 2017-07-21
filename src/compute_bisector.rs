@@ -1,7 +1,6 @@
 extern crate std;
 extern crate rgsl;
 extern crate itertools;
-extern crate gnuplot;
 use self::itertools::cons_tuples;
 use linspace::linspace;
 

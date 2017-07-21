@@ -17,29 +17,30 @@ pub struct BoundingShape {
 
 impl BoundingShape {
     pub fn new(spot: &Spot, time: f64) -> Self {
-        let mut radius = spot.radius;
-        let max_radius = radius;
-
-        if spot.mortal {
+        let max_radius = spot.radius;
+        let radius = if spot.mortal {
             let lifetime = spot.time_disappear - spot.time_appear;
             let growth_time = 0.1 * lifetime;
             if (time - spot.time_appear).abs() < growth_time {
-                radius *= (time - spot.time_appear).abs() / growth_time;
+                spot.radius *  (time - spot.time_appear).abs() / growth_time
             } else if (time - spot.time_disappear).abs() < growth_time {
-                radius *= (time - spot.time_disappear).abs() / growth_time;
+                spot.radius *  (time - spot.time_disappear).abs() / growth_time
+            } else {
+                spot.radius
             }
-        }
+        } else {
+            spot.radius
+        };
 
         let phase = (time % spot.star.period) / spot.star.period * 2.0 * consts::PI;
         let theta = phase + spot.longitude;
         let phi = consts::FRAC_PI_2 - spot.latitude;
 
-        let mut center = Point {
+        let center = Point {
             x: phi.sin() * theta.cos(),
             y: phi.sin() * theta.sin(),
             z: phi.cos(),
-        };
-        center.rotate_y(spot.star.inclination - consts::FRAC_PI_2);
+        }.rotated_y(spot.star.inclination - consts::FRAC_PI_2);
 
         let depth = (1.0 - radius.powi(2)).sqrt();
         let circle_center = Point {

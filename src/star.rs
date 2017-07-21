@@ -8,7 +8,7 @@ use fit_rv::{Gaussian, fit_rv};
 use simulation::normalize;
 use linspace::linspace;
 
-static SOLAR_RADIUS: f64 = 696000.0; // TODO: km/s
+static SOLAR_RADIUS: f64 = 6.96e8;
 static DAYS_TO_SECONDS: f64 = 86400.0;
 
 pub struct Star {
@@ -66,7 +66,7 @@ impl Star {
         let guess = Gaussian {
             height: normalized[normalized.len() / 2] - normalized[0],
             centroid: profile_quiet.rv[normalized.len() / 2],
-            width: 2.71,
+            width: 2710.0,
             offset: normalized[0],
         };
 
