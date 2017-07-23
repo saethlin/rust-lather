@@ -13,6 +13,10 @@ rand = "*"
 GSL = "*"
 rust-ini = "*"
 itertools = "*"
+quadrature = "*"
+rulinalg = "*"
+numpy = "*"
+ndarray = "*"
 
 [dependencies.cpython]
 version = "*"

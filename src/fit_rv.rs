@@ -10,6 +10,7 @@ pub struct Data {
     y: Vec<f64>,
 }
 
+#[derive(Debug)]
 #[derive(Clone)]
 pub struct Gaussian {
     pub height: f64,

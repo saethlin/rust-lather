@@ -8,7 +8,7 @@ use self::ini::Ini;
 use self::rand::distributions::{IndependentSample, LogNormal, Range};
 use std::sync::Arc;
 use planck::planck_integral;
-use fit_rv::fit_rv;
+use poly_fit_rv::fit_rv;
 use compute_bisector::compute_bisector;
 
 use star::Star;
@@ -20,8 +20,8 @@ pub struct Observation {
 }
 
 pub struct Simulation {
-    star: Arc<Star>,
-    spots: Vec<Spot>,
+    pub star: Arc<Star>,
+    pub spots: Vec<Spot>,
     dynamic_fill_factor: f64,
     generator: Arc<RwLock<rand::XorShiftRng>>,
 }
@@ -213,13 +213,7 @@ impl Simulation {
                 *spot = *star - *spot;
             }
 
-            normalize(&mut spot_profile);
-            let rv_fit = fit_rv(
-                &self.star.profile_quiet.rv,
-                &spot_profile,
-                &self.star.fit_result,
-            );
-            let rv = rv_fit.centroid - self.star.zero_rv;
+            let rv = fit_rv(&self.star.profile_quiet.rv, &spot_profile) - self.star.zero_rv;
 
             let bisector: Vec<f64> = compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
                 .iter()
@@ -268,5 +262,16 @@ impl std::fmt::Debug for Simulation {
         let new_len = message.len() - 5;
         message.truncate(new_len);
         f.write_str(message.as_str())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn load_config() {
+        let sim = Simulation::new("/home/ben/rather/sun.cfg");
+        assert_eq!(sim.dynamic_fill_factor, 0.0);
     }
 }

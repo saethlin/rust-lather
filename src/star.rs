@@ -4,8 +4,7 @@ use std::f64::consts;
 use profile::Profile;
 use bounds::Bounds;
 use sun_ccfs::*;
-use fit_rv::{Gaussian, fit_rv};
-use simulation::normalize;
+use poly_fit_rv::fit_rv;
 use linspace::linspace;
 
 static SOLAR_RADIUS: f64 = 6.96e8;
@@ -23,7 +22,6 @@ pub struct Star {
     pub zero_rv: f64,
     pub equatorial_velocity: f64,
     pub integrated_ccf: Vec<f64>,
-    pub fit_result: Gaussian,
     pub profile_active: Profile,
     pub profile_quiet: Profile,
 }
@@ -60,18 +58,6 @@ impl Star {
             flux_quiet += limb_integral;
         }
 
-        let mut normalized = integrated_ccf.clone();
-        normalize(&mut normalized);
-
-        let guess = Gaussian {
-            height: normalized[normalized.len() / 2] - normalized[0],
-            centroid: profile_quiet.rv[normalized.len() / 2],
-            width: 2710.0,
-            offset: normalized[0],
-        };
-
-        let initial_fit = fit_rv(&rv(), &normalized, &guess);
-
         Star {
             period: period,
             inclination: inclination * consts::PI / 180.0,
@@ -81,10 +67,9 @@ impl Star {
             limb_quadratic: limb_quadratic,
             grid_size: grid_size,
             flux_quiet: flux_quiet,
-            zero_rv: initial_fit.centroid,
+            zero_rv: fit_rv(&rv(), &integrated_ccf),
             equatorial_velocity: equatorial_velocity,
             integrated_ccf: integrated_ccf,
-            fit_result: initial_fit,
             profile_active: profile_active,
             profile_quiet: profile_quiet,
         }

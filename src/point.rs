@@ -31,6 +31,4 @@ impl Point {
             z: self.z,
         }
     }
-
-
 }
