@@ -1,0 +1,7 @@
+Resolution correction
+Visualization program- still need to check correctness of the geometry
+More unit tests
+Pure-rust interpolator for computing bisector
+Bench tests for LATHER
+
+polynomial-based RV calculation turns up very different values; do we care?

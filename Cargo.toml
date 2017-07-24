@@ -16,7 +16,7 @@ itertools = "*"
 quadrature = "*"
 rulinalg = "*"
 numpy = "*"
-ndarray = "*"
+ndarray = "0.9.1"
 
 [dependencies.cpython]
 version = "*"
