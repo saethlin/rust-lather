@@ -3,11 +3,6 @@ name = "rather"
 version = "0.1.0"
 authors = ["saethlin <kimockb@gmail.com>"]
 
-[lib]
-name = "rather"
-path = "src/lib.rs"
-crate-type = ["cdylib"]
-
 [dependencies]
 rand = "*"
 GSL = "*"
@@ -17,7 +12,11 @@ quadrature = "*"
 rulinalg = "*"
 numpy = "*"
 ndarray = "0.9.1"
+bencher = "*"
 
 [dependencies.cpython]
 version = "*"
 features = ["extension-module"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
