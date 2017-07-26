@@ -12,7 +12,7 @@ pub struct BoundingShape {
     b: Point,
     radius: f64,
     max_radius: f64,
-    visible: bool,
+    pub visible: bool,
 }
 
 impl BoundingShape {
@@ -34,7 +34,7 @@ impl BoundingShape {
 
         let phase = (time % spot.star.period) / spot.star.period * 2.0 * consts::PI;
         let theta = phase + spot.longitude;
-        let phi = consts::FRAC_PI_2 - spot.latitude;
+        let phi = consts::FRAC_PI_2 + spot.latitude;
 
         let center = Point {
             x: phi.sin() * theta.cos(),
@@ -129,8 +129,14 @@ impl BoundingShape {
         if tmp.is_nan() {
             return Bounds::new(0.0, 0.0);
         }
-        let theta1 = 2.0 * ((self.b.y + tmp) / (self.a.y + y_mod)).atan();
-        let theta2 = 2.0 * ((self.b.y - tmp) / (self.a.y + y_mod)).atan();
+
+        let mut theta1 = 2.0 * (self.b.y + tmp).atan2(self.a.y + y_mod);
+        let mut theta2 = 2.0 * (self.b.y - tmp).atan2(self.a.y + y_mod);
+
+        if self.center.y < 0.0 {
+            theta1 += consts::PI;
+            theta2 += consts::PI;
+        }
 
         let z1: f64 = self.circle_center.z +
             self.radius * (self.a.z * theta1.cos() + self.b.z * theta1.sin());

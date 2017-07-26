@@ -227,7 +227,49 @@ impl Simulation {
         }
         output
     }
+
+    pub fn draw_rgba(&mut self, time: f64, image: &mut Vec<u8>) {
+        use boundingshape::BoundingShape;
+        use linspace::floatrange;
+        self.check_fill_factor(time);
+        let star_intensity = planck_integral(self.star.temperature, 4000e-10, 7000e-10);
+        for spot in &mut self.spots {
+            spot.intensity = planck_integral(spot.temperature, 4000e-10, 7000e-10) /
+                star_intensity;
+        }
+
+        let grid_interval = 2.0 / self.star.grid_size as f64;
+
+        for spot in self.spots.iter().filter(|s| s.alive(time)) {
+            let bounds = BoundingShape::new(spot, time);
+            let y_bounds = bounds.y_bounds();
+            for y in floatrange((y_bounds.lower/grid_interval).round()*grid_interval,
+                (y_bounds.upper/grid_interval).round()*grid_interval,
+                grid_interval) {
+
+                let y_index = ((y + 1.0) / 2.0 * 1000.0).round() as usize;
+                let z_bounds = bounds.z_bounds(y);
+                if z_bounds.upper == 0.0 && z_bounds.lower == 0.0 {
+                    continue;
+                }
+                for z in floatrange((z_bounds.lower/grid_interval).round()*grid_interval,
+                    (z_bounds.upper/grid_interval).round()*grid_interval,
+                    grid_interval) {
+                    let z_index = ((z + 1.0) / 2.0 * 1000.0).round() as usize;
+                    let x = 1.0 - (y*y + z*z);
+                    let x = f64::max(0.0, x);
+                    let intensity = self.star.limb_brightness(x) * spot.intensity;
+                    let index = (z_index * 1000 + y_index) as usize;
+                    image[4*index] = (intensity * 255.0) as u8;
+                    image[4*index + 1] = (intensity * 131.0) as u8;
+                    image[4*index + 2] = 0;
+                    image[4*index + 3] = 255;
+                }
+            }
+        }
+    }
 }
+
 
 impl std::fmt::Debug for Simulation {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

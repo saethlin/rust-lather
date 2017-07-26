@@ -13,6 +13,7 @@ rulinalg = "*"
 numpy = "*"
 ndarray = "0.9.1"
 bencher = "*"
+png = "*"
 
 [dependencies.cpython]
 version = "*"

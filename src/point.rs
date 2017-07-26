@@ -1,5 +1,6 @@
 extern crate std;
 
+#[derive(PartialEq)]
 #[derive(Debug)]
 pub struct Point {
     pub x: f64,
@@ -30,5 +31,44 @@ impl Point {
             y: self.x * angle.sin() + self.y * angle.cos(),
             z: self.z,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::f64::consts;
+
+    fn is_close(actual: f64, expected: f64) -> bool {
+        let precision = 15;
+        let pow = 10.0f64.powi(precision + 1);
+        let delta = (expected - actual).abs();
+        let max_delta = 10.0f64.powi(-precision) / 2.0;
+        return (delta * pow).round() / pow <= max_delta;
+    }
+
+    #[test]
+    fn x_rotation() {
+        let point = Point{x: 1.0, y: 1.0, z: 1.0}.rotated_x(consts::FRAC_PI_4);
+        assert_eq!(point.x, 1.0);
+        assert!(is_close(point.y, 0.0));
+        assert!(is_close(point.z, consts::SQRT_2));
+    }
+
+    #[test]
+    fn y_rotation() {
+        let point = Point{x: 1.0, y: 1.0, z: 1.0}.rotated_y(consts::FRAC_PI_4);
+        assert!(is_close(point.x, consts::SQRT_2));
+        assert_eq!(point.y, 1.0);
+        assert!(is_close(point.z, 0.0));
+
+    }
+
+    #[test]
+    fn z_rotation() {
+        let point = Point{x: 1.0, y: 1.0, z: 1.0}.rotated_z(consts::FRAC_PI_4);
+        assert!(is_close(point.x, 0.0));
+        assert!(is_close(point.y, consts::SQRT_2));
+        assert_eq!(point.z, 1.0);
     }
 }

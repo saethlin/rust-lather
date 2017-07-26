@@ -78,6 +78,28 @@ impl Star {
     pub fn limb_integral(&self, z_bounds: &Bounds, y: f64) -> f64 {
         limb_integral(z_bounds, y, self.limb_linear, self.limb_quadratic)
     }
+
+    pub fn limb_brightness(&self, x: f64) -> f64 {
+        1.0 - self.limb_linear * (1.0-x) - self.limb_quadratic * (1.0-x).powi(2)
+    }
+
+    pub fn draw_rgba(&self, image: &mut Vec<u8>) {
+        image.clear();
+        for y in linspace(-1.0, 1.0, 1000) {
+            for z in linspace(-1.0, 1.0, 1000) {
+                let intensity = if (y.powi(2) + z.powi(2)) <= 1.0 {
+                    let x = f64::max(0.0, 1.0 - (z.powi(2) + y.powi(2)));
+                    self.limb_brightness(x)
+                } else {
+                    0.0
+                };
+                image.push((intensity * 255.) as u8);
+                image.push((intensity * 157.) as u8);
+                image.push((intensity * 63.) as u8);
+                image.push(255);
+            }
+        }
+    }
 }
 
 pub fn min(a: f64, b: f64) -> f64 {

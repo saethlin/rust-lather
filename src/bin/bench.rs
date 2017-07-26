@@ -49,6 +49,25 @@ fn bench_quadrature_planck_integral(b: &mut Bencher) {
     b.iter(|| planck_integral(5778.0, 4000e-10, 7000e-10));
 }
 
+fn bench_draw_star(b: &mut Bencher) {
+    use rather::simulation::Simulation;
+    let sim = Simulation::new("/home/ben/rather/sun.cfg");
+    let mut image = vec![0; 1000*1000*4];
+    b.iter(|| sim.star.draw_rgba(&mut image));
+}
+
+fn bench_draw_simulation(b: &mut Bencher) {
+    use rather::simulation::Simulation;
+    let mut sim = Simulation::new("/home/ben/rather/sun.cfg");
+    let image = vec![0; 1000*1000*4];
+    b.iter(|| {
+        let mut buf = image.clone();
+        sim.draw_rgba(10.0, &mut buf)
+        });
+}
+
+
 benchmark_group!(benches, create_sim, observe_flux, observe_rv, bench_bisector,
-    bench_fit_rv, bench_profile_shift, bench_quadrature_planck_integral);
+    bench_fit_rv, bench_profile_shift, bench_quadrature_planck_integral,
+    bench_draw_star, bench_draw_simulation);
 benchmark_main!(benches);
