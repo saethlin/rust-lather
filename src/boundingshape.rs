@@ -12,7 +12,7 @@ pub struct BoundingShape {
     b: Point,
     radius: f64,
     max_radius: f64,
-    pub visible: bool,
+    visible: bool,
 }
 
 impl BoundingShape {
@@ -81,9 +81,9 @@ impl BoundingShape {
         }
     }
 
-    pub fn y_bounds(&self) -> Bounds {
+    pub fn y_bounds(&self) -> Option<Bounds> {
         if !self.visible {
-            return Bounds::new(0.0, 0.0);
+            return None;
         }
 
         let theta_y_min = if self.b.y != 0.0 {
@@ -108,26 +108,28 @@ impl BoundingShape {
             self.radius * (theta_y_max.cos() * self.b.y + theta_y_max.sin() * self.b.y);
 
         if x_min < 0.0 && x_max < 0.0 {
-            return Bounds::new(0.0, 0.0);
+            return None;
         }
         if x_max < 0.0 {
-            return Bounds::new(y_min, 0.0);
+            return Some(Bounds::new(y_min, 0.0));
         }
         if x_min < 0.0 {
-            return Bounds::new(y_max, -1.0);
+            return Some(Bounds::new(y_max, -1.0));
         }
 
-        Bounds::new(y_min, y_max)
+        Some(Bounds::new(y_min, y_max))
     }
 
-    pub fn z_bounds(&self, y: f64) -> Bounds {
-        if self.radius == 0.0 {
-            return Bounds::new(0.0, 0.0);
+    pub fn z_bounds(&self, y: f64) -> Option<Bounds> {
+        if self.radius == 0.0 || !self.visible {
+            return None;
         }
+
         let y_mod = (y - self.circle_center.y) / self.radius;
         let tmp = (self.a.y.powi(2) + self.b.y.powi(2) - y_mod.powi(2)).sqrt();
+        // TODO: When is this nan, and is that covered by another check?
         if tmp.is_nan() {
-            return Bounds::new(0.0, 0.0);
+            return None;
         }
 
         let mut theta1 = 2.0 * (self.b.y + tmp).atan2(self.a.y + y_mod);
@@ -143,7 +145,7 @@ impl BoundingShape {
         let z2: f64 = self.circle_center.z +
             self.radius * (self.a.z * theta2.cos() + self.b.z * theta2.sin());
 
-        Bounds::new(z2, z1)
+        Some(Bounds::new(z2, z1))
     }
 
     pub fn collides_with(&self, other: &BoundingShape) -> bool {
