@@ -46,6 +46,9 @@ impl Star {
         for y in linspace(-1.0, 1.0, grid_size) {
             let ccf_shifted = profile_quiet.shift(y * equatorial_velocity);
             let z_bound = sqrt(1.0 - y.powi(2));
+            if z_bound < std::f64::EPSILON {
+                continue;
+            }
             let limb_integral = limb_integral(
                 &Bounds::new(-z_bound, z_bound),
                 y,
@@ -110,11 +113,6 @@ pub fn min(a: f64, b: f64) -> f64 {
 }
 
 pub fn limb_integral(z_bounds: &Bounds, y: f64, limb_linear: f64, limb_quadratic: f64) -> f64 {
-    use std::f64::EPSILON;
-    if (z_bounds.lower - z_bounds.upper).abs() < EPSILON {
-        return 0.0;
-    }
-
     let z_upper = z_bounds.upper;
     let z_lower = z_bounds.lower;
 
