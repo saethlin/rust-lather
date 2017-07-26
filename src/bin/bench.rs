@@ -59,10 +59,9 @@ fn bench_draw_star(b: &mut Bencher) {
 fn bench_draw_simulation(b: &mut Bencher) {
     use rather::simulation::Simulation;
     let mut sim = Simulation::new("/home/ben/rather/sun.cfg");
-    let image = vec![0; 1000*1000*4];
+    let mut image = vec![0; 1000*1000*4];
     b.iter(|| {
-        let mut buf = image.clone();
-        sim.draw_rgba(10.0, &mut buf)
+        sim.draw_rgba(10.0, &mut image)
         });
 }
 
