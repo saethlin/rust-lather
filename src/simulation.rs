@@ -261,10 +261,10 @@ impl Simulation {
                         for z in floatrange((z_bounds.lower/grid_interval).round()*grid_interval,
                             (z_bounds.upper/grid_interval).round()*grid_interval,
                             grid_interval) {
-                            let z_index = ((z + 1.0) / 2.0 * 1000.0).round() as usize;
                             let x = 1.0 - (y*y + z*z);
                             let x = f64::max(0.0, x);
                             let intensity = self.star.limb_brightness(x) * spot.intensity;
+                            let z_index = ((-z + 1.0) / 2.0 * 1000.0).round() as usize;
                             let index = (z_index * 1000 + y_index) as usize;
                             image[4*index] = (intensity * 255.0) as u8;
                             image[4*index + 1] = (intensity * 131.0) as u8;

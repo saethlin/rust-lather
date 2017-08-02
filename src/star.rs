@@ -89,7 +89,7 @@ impl Star {
     pub fn draw_rgba(&self, image: &mut Vec<u8>) {
         image.clear();
         for y in linspace(-1.0, 1.0, 1000) {
-            for z in linspace(-1.0, 1.0, 1000) {
+            for z in linspace(1.0, -1.0, 1000) {
                 let intensity = if (y.powi(2) + z.powi(2)) <= 1.0 {
                     let x = f64::max(0.0, 1.0 - (z.powi(2) + y.powi(2)));
                     self.limb_brightness(x)
