@@ -21,6 +21,7 @@ pub mod planck;
 pub mod compute_bisector;
 pub mod linspace;
 pub mod poly_fit_rv;
+pub mod resolution;
 
 py_module_initializer!(rather, initrather, PyInit_rather, |py, m| {
     m.add_class::<Simulation>(py)?;

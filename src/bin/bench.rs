@@ -66,7 +66,6 @@ fn bench_draw_simulation(b: &mut Bencher) {
         });
 }
 
-
 benchmark_group!(benches, create_sim, observe_flux, observe_rv, bench_bisector,
     bench_fit_rv, bench_profile_shift, bench_quadrature_planck_integral,
     bench_draw_star, bench_draw_simulation);

@@ -8,9 +8,9 @@ pub struct Profile {
     pub ccf: Vec<f64>,
     derivative: Vec<f64>,
     stepsize: f64,
+    cache: Vec<f64>,
 }
 
-// TODO: Based on perf data, adding a cache could be worth about 10% total
 impl Profile {
     /// Creates a profile with the provided radial velocity and
     /// cross-correlation function, and computes the derivative to enable fast
@@ -18,8 +18,8 @@ impl Profile {
     /// relative velocities
 
     pub fn new(rv: Vec<f64>, ccf: Vec<f64>) -> Self {
-        let ccf_diff = ccf.iter().zip(ccf.iter().skip(1)).map(|(a, b)| a - b);
-        let rv_diff = rv.iter().zip(rv.iter().skip(1)).map(|(a, b)| a - b);
+        let ccf_diff = ccf.windows(2).map(|s| s[0] - s[1]);
+        let rv_diff = rv.windows(2).map(|s| s[0] - s[1]);
 
         let der = ccf_diff
             .zip(rv_diff)
@@ -32,6 +32,7 @@ impl Profile {
             ccf: ccf.clone(),
             derivative: der,
             stepsize: (rv[0] - rv[1]).abs(),
+            cache: Vec::with_capacity(rv.len()*1000),
         }
     }
 
@@ -39,7 +40,11 @@ impl Profile {
 
     pub fn is_empty(&self) -> bool { self.len() == 0 }
 
+    // TODO: Caching here is worth over 2x total performance
     pub fn shift(&self, velocity: f64) -> Vec<f64> {
+        //let index = ((velocity / self.max_velocity) + 1) / 2 * self.grid_size * self.rv.len();
+        //self.cache.split_at(index).1.split_at(self.rv.len()).0
+
         /// Uses the pre-computed derivative to compute a shifted version of
         /// this profile's cross-correlation function by linear interpolation
         ///

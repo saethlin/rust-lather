@@ -43,7 +43,7 @@ pub fn compute_bisector(rv: &[f64], profile: &[f64]) -> Vec<f64> {
     let left_max = left_profile[left_profile.len() - 1];
     let right_max = right_profile[right_profile.len() - 1];
     let bis_end = f64::min(left_max, right_max);
-    linspace(min_value, bis_end, 100)
+    linspace(min_value, bis_end, 1000)
         .map(|ccf| {
             (left_spline.eval(ccf, &mut left_acc) + right_spline.eval(ccf, &mut right_acc)) / 2.0
         })

@@ -4,24 +4,13 @@ extern crate png;
 fn main() {
     use rather::simulation::Simulation;
     let mut sim = Simulation::new("/home/ben/rather/sun.cfg");
-    let times = [7.0, 9.0, 11.0, 13.0, 15.0, 18.0];
     let mut pix_image = vec![0; 1000*1000*4];
 
     sim.star.draw_rgba(&mut pix_image);
-
-    for time in times.iter().cloned() {
+    for time in rather::linspace::linspace(6.0, 8.0, 30) {
         sim.draw_rgba(time, &mut pix_image);
-    }
-    sim.spots[0].latitude *= -1.0;
-    for time in times.iter().cloned() {
-        sim.draw_rgba(time, &mut pix_image);
-    }
-    save_png(&pix_image, "spot_test.png");
-
-    for time in rather::linspace::linspace(12.0, 13.0, 10) {
-        sim.star.draw_rgba(&mut pix_image);
-        sim.draw_rgba(time, &mut pix_image);
-        save_png(&pix_image, &format!("{:.2}.png", time))
+        save_png(&pix_image, &format!("{:.2}.png", time));
+        sim.undraw_rgba(time, &mut pix_image);
     }
 }
 

@@ -213,6 +213,13 @@ impl Simulation {
                 *spot = *star - *spot;
             }
 
+            /*
+            use resolution::set_resolution;
+            let spot_profile = set_resolution(&self.star.profile_active.rv, &spot_profile);
+            println!("{:?}", spot_profile);
+            panic!();
+            */
+
             let rv = fit_rv(&self.star.profile_quiet.rv, &spot_profile) - self.star.zero_rv;
 
             let bisector: Vec<f64> = compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
@@ -228,6 +235,8 @@ impl Simulation {
         output
     }
 
+    // This is slow because the image is row-major, but we navigate the simulation in
+    // a column-major fashion to follow the rotational symmetry
     pub fn draw_rgba(&mut self, time: f64, image: &mut Vec<u8>) {
         use boundingshape::BoundingShape;
         use linspace::floatrange;
@@ -260,6 +269,41 @@ impl Simulation {
                             image[4*index] = (intensity * 255.0) as u8;
                             image[4*index + 1] = (intensity * 131.0) as u8;
                             image[4*index + 2] = 0;
+                            image[4*index + 3] = 255;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn undraw_rgba(&mut self, time: f64, image: &mut Vec<u8>) {
+        use boundingshape::BoundingShape;
+        use linspace::floatrange;
+        self.check_fill_factor(time);
+
+        let grid_interval = 2.0 / self.star.grid_size as f64;
+
+        for spot in self.spots.iter().filter(|s| s.alive(time)) {
+            let bounds = BoundingShape::new(spot, time);
+            if let Some(y_bounds) = bounds.y_bounds() {
+                for y in floatrange((y_bounds.lower/grid_interval).round()*grid_interval,
+                    (y_bounds.upper/grid_interval).round()*grid_interval,
+                    grid_interval) {
+
+                    let y_index = ((y + 1.0) / 2.0 * 1000.0).round() as usize;
+                    if let Some(z_bounds) = bounds.z_bounds(y) {
+                        for z in floatrange((z_bounds.lower/grid_interval).round()*grid_interval,
+                            (z_bounds.upper/grid_interval).round()*grid_interval,
+                            grid_interval) {
+                            let z_index = ((z + 1.0) / 2.0 * 1000.0).round() as usize;
+                            let x = 1.0 - (y*y + z*z);
+                            let x = f64::max(0.0, x);
+                            let intensity = self.star.limb_brightness(x);
+                            let index = (z_index * 1000 + y_index) as usize;
+                            image[4*index] = (intensity * 255.0) as u8;
+                            image[4*index + 1] = (intensity * 157.0) as u8;
+                            image[4*index + 2] = (intensity * 63.0) as u8;
                             image[4*index + 3] = 255;
                         }
                     }

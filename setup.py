@@ -1,7 +1,6 @@
 from setuptools import setup
 from setuptools_rust import Binding, RustExtension
 
-
 setup(name='rather',
     version='0.1.0',
     rust_extensions=[
