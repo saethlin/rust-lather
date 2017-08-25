@@ -1,12 +1,12 @@
 from setuptools import setup
 from setuptools_rust import Binding, RustExtension
 
-setup(name='rather',
+setup(name='lather',
     version='0.1.0',
     rust_extensions=[
-        RustExtension('rather.rather', 'Cargo.toml', binding=Binding.RustCPython)
+        RustExtension('lather.lather', 'Cargo.toml', binding=Binding.RustCPython)
     ],
-    packages=['rather'],
+    packages=['lather'],
     zip_safe=False,
     install_requires=['numpy']
 )

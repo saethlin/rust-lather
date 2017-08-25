@@ -1,5 +1,2 @@
 Resolution correction
 Pure-rust interpolator for computing bisector
-
-Bench tests for LATHER
-polynomial-based RV calculation turns up very different values; do we care?

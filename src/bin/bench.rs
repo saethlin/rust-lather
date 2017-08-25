@@ -1,9 +1,8 @@
 #[macro_use]
 extern crate bencher;
 use bencher::Bencher;
-extern crate rather;
-use rather::Simulation;
-use rather::linspace;
+extern crate lather;
+use lather::{Simulation, linspace};
 
 fn create_sim(b: &mut Bencher) {
     b.iter(|| Simulation::new("sun.cfg"));
@@ -24,14 +23,12 @@ fn observe_rv(b: &mut Bencher) {
 }
 
 fn draw_star(b: &mut Bencher) {
-    use rather::Simulation;
     let sim = Simulation::new("sun.cfg");
     let mut image = vec![0; 1000 * 1000 * 4];
     b.iter(|| sim.star.draw_rgba(&mut image));
 }
 
 fn draw_simulation(b: &mut Bencher) {
-    use rather::Simulation;
     let mut sim = Simulation::new("sun.cfg");
     let mut image = vec![0; 1000 * 1000 * 4];
     b.iter(|| sim.draw_rgba(10.0, &mut image));

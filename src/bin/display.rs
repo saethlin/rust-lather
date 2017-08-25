@@ -1,13 +1,13 @@
-extern crate rather;
 extern crate png;
+extern crate lather;
+use lather::{Simulation, linspace};
 
 fn main() {
-    use rather::Simulation;
     let mut sim = Simulation::new("sun.cfg");
     let mut pix_image = vec![0; 1000 * 1000 * 4];
 
     sim.star.draw_rgba(&mut pix_image);
-    for time in rather::linspace(6.0, 8.0, 30) {
+    for time in linspace(6.0, 8.0, 30) {
         sim.draw_rgba(time, &mut pix_image);
         save_png(&pix_image, &format!("{:.2}.png", time));
         sim.undraw_rgba(time, &mut pix_image);

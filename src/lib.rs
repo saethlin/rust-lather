@@ -1,5 +1,9 @@
-//! The `rather` crate models starspot effects on photometric
+//! The `lather` crate models starspot effects on photometric
 //! and radial velocity observations, with a Python interface.
+//!
+//! This project was inspired by a desire to improve upon the
+//! starspot modeling library named SOAP
+
 #[deny(missing_docs)]
 #[macro_use]
 extern crate cpython;
@@ -27,7 +31,7 @@ mod profile;
 mod sun_ccfs;
 
 #[doc(hidden)]
-pub use py_interface::PyInit_rather;
+pub use py_interface::PyInit_lather;
 
 #[allow(missing_docs)]
 mod py_interface {
@@ -37,7 +41,7 @@ mod py_interface {
     use ndarray::ArrayViewD;
     use simulation::Simulation;
 
-    py_module_initializer!(rather, initrather, PyInit_rather, |py, m| {
+    py_module_initializer!(lather, initlather, PyInit_lather, |py, m| {
         m.add_class::<PySimulation>(py)?;
         Ok(())
     });
