@@ -2,7 +2,7 @@
 //! and radial velocity observations, with a Python interface.
 //!
 //! This project was inspired by a desire to improve upon the
-//! starspot modeling library named SOAP
+//! starspot modeling library named SOAP.
 
 #[deny(missing_docs)]
 #[macro_use]
