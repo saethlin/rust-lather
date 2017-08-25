@@ -13,12 +13,13 @@ setup(name='lather',
     keywords='science simulation astronomy',
     classifiers=[
         'Development Status :: 3 - Alpha',
-    ]
+    ],
     rust_extensions=[
         RustExtension('lather.lather', 'Cargo.toml', binding=Binding.RustCPython)
     ],
     packages=['lather'],
     zip_safe=False,
     install_requires=['numpy'],
-    python_requires='3.6',
+    python_requires='==3.6',
+    setup_requires=['setuptools_rust==0.7.1'],
 )
