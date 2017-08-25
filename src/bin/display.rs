@@ -3,7 +3,7 @@ extern crate png;
 
 fn main() {
     use rather::Simulation;
-    let mut sim = Simulation::new("/home/ben/rather/sun.cfg");
+    let mut sim = Simulation::new("sun.cfg");
     let mut pix_image = vec![0; 1000 * 1000 * 4];
 
     sim.star.draw_rgba(&mut pix_image);

@@ -1,3 +1,4 @@
+/// Returns the RV values that correspond to `ccf_quiet` and `ccf_active`.
 pub fn rv() -> Vec<f64> {
     let kms = vec![
         -20.0,
@@ -405,6 +406,7 @@ pub fn rv() -> Vec<f64> {
     kms.iter().map(|k| k * 1e3).collect()
 }
 
+/// Returns the CCF data for a profile of the quiescent sun.
 pub fn ccf_quiet() -> Vec<f64> {
     vec![
         1.0,
@@ -811,6 +813,7 @@ pub fn ccf_quiet() -> Vec<f64> {
     ]
 }
 
+/// Returns the CCF data for a profile of a sunspot.
 pub fn ccf_active() -> Vec<f64> {
     vec![
         1.0,

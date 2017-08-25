@@ -8,21 +8,26 @@ use self::ini::Ini;
 use self::rand::distributions::{IndependentSample, LogNormal, Range};
 use std::sync::Arc;
 use planck::planck_integral;
-use poly_fit_rv::fit_rv;
+use fit_rv::fit_rv;
 use compute_bisector::compute_bisector;
 use rayon::prelude::*;
 
 use star::Star;
 use spot::Spot;
 
+/// An observed radial velocity and line bisector.
 pub struct Observation {
+    /// The radial velocity value in m/s.
     pub rv: f64,
+    /// The line bisector in m/s.
     pub bisector: Vec<f64>,
 }
 
-/// A Star with Spots that can be observed
+/// A model of a star with spots that can be observed.
 pub struct Simulation {
+    #[doc(hidden)]
     pub star: Arc<Star>,
+    #[doc(hidden)]
     pub spots: Vec<Spot>,
     dynamic_fill_factor: f64,
     generator: Arc<RwLock<rand::XorShiftRng>>,
@@ -56,6 +61,7 @@ macro_rules! get {
 }
 
 impl Simulation {
+    /// Construct a new Star from a config file.
     pub fn new(filename: &str) -> Simulation {
         let mut error = String::new();
         let file = Ini::load_from_file(filename).expect(&format!(
@@ -164,6 +170,8 @@ impl Simulation {
         }
     }
 
+    /// Computes the relative brightness of this system at each time (in days),
+    /// when observed in the wavelength band between `wavelength_min` and `wavelength_max`.
     pub fn observe_flux(
         &mut self,
         time: &[f64],
@@ -187,6 +195,8 @@ impl Simulation {
             .collect()
     }
 
+    /// Computes the radial velocity and line bisector of this system at each time (in days),
+    /// when observed in the wavelength band between `wavelength_min` and `wavelength_max`.
     pub fn observe_rv(
         &mut self,
         time: &[f64],
@@ -239,47 +249,13 @@ impl Simulation {
                 }
             })
             .collect()
-
-        /*
-        for t in time.iter() {
-            let mut spot_profile = vec![0.0; self.star.profile_active.len()];
-            for spot in self.spots.iter().filter(|s| s.alive(*t)) {
-                let profile = spot.get_ccf(*t);
-                for (total, this) in spot_profile.iter_mut().zip(profile.iter()) {
-                    *total += *this;
-                }
-            }
-
-            for (spot, star) in spot_profile.iter_mut().zip(self.star.integrated_ccf.iter()) {
-                *spot = *star - *spot;
-            }
-
-            /*
-            use resolution::set_resolution;
-            let spot_profile = set_resolution(&self.star.profile_active.rv, &spot_profile);
-            println!("{:?}", spot_profile);
-            panic!();
-            */
-
-            let rv = fit_rv(&self.star.profile_quiet.rv, &spot_profile) - self.star.zero_rv;
-
-            let bisector: Vec<f64> = compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
-                .iter()
-                .map(|b| b - self.star.zero_rv)
-                .collect();
-
-            output.push(Observation {
-                rv: rv,
-                bisector: bisector,
-            })
-        }
-        output
-        */
     }
 
-    // This is slow because the image is row-major, but we navigate the simulation in
-    // a column-major fashion to follow the rotational symmetry
+    /// Draw the simulation in a row-major fashion, as it would be seen in the visible
+    /// wavelength band, 4000-7000 Angstroms.
     pub fn draw_rgba(&mut self, time: f64, image: &mut Vec<u8>) {
+        // This is slow because the image is row-major, but we navigate the simulation in
+        // a column-major fashion to follow the rotational symmetry
         use boundingshape::BoundingShape;
         use linspace::floatrange;
         self.check_fill_factor(time);
@@ -324,6 +300,7 @@ impl Simulation {
         }
     }
 
+    /// Removes the spots that would be drawn by [draw_rgba](#method.draw_rgba).
     pub fn undraw_rgba(&mut self, time: f64, image: &mut Vec<u8>) {
         use boundingshape::BoundingShape;
         use linspace::floatrange;
@@ -365,7 +342,6 @@ impl Simulation {
         }
     }
 }
-
 
 impl std::fmt::Debug for Simulation {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

@@ -1,7 +1,7 @@
 extern crate std;
 use std::iter;
 
-/// A cross-correlation profile, which can be shifted by fast linear interpolation
+/// A cross-correlation profile, which can be shifted by fast linear interpolation.
 pub struct Profile {
     pub rv: Vec<f64>,
     pub ccf: Vec<f64>,
@@ -13,8 +13,7 @@ impl Profile {
     /// Creates a profile with the provided radial velocity and
     /// cross-correlation function, and computes the derivative to enable fast
     /// linear interpolation to simulate viewing the profile at different
-    /// relative velocities
-
+    /// relative velocities.
     pub fn new(rv: Vec<f64>, ccf: Vec<f64>) -> Self {
         let ccf_diff = ccf.windows(2).map(|s| s[0] - s[1]);
         let rv_diff = rv.windows(2).map(|s| s[0] - s[1]);
@@ -33,21 +32,21 @@ impl Profile {
         }
     }
 
+    /// Returns the number of elements in the profile.
     pub fn len(&self) -> usize {
         self.rv.len()
     }
 
+    /// Returns `true` if the profile has a length of 0.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    // TODO: Caching here is worth over 2x total performance
+    /// Uses the pre-computed derivative to compute a shifted version of
+    /// this profile's cross-correlation function by linear interpolation.
+    /// The units of velocity must match those of the radial velocity used
+    /// to construct this profile.
     pub fn shift(&self, velocity: f64) -> Vec<f64> {
-        /// Uses the pre-computed derivative to compute a shifted version of
-        /// this profile's cross-correlation function by linear interpolation
-        ///
-        /// The units of velocity must match those of the radial velocity used
-        /// to construct this profile
         let quotient = (velocity / self.stepsize).round() as isize;
         let remainder = velocity - (quotient as f64) * self.stepsize;
 

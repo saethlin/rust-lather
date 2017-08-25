@@ -4,7 +4,7 @@ use std::f64::consts;
 use profile::Profile;
 use bounds::Bounds;
 use sun_ccfs::*;
-use poly_fit_rv::fit_rv;
+use fit_rv::fit_rv;
 use linspace::linspace;
 
 static SOLAR_RADIUS: f64 = 6.96e8;
@@ -46,7 +46,6 @@ impl Star {
 
         let profile_quiet = Profile::new(rv(), ccf_quiet());
         let profile_active = Profile::new(rv(), ccf_active());
-
 
         let mut integrated_ccf = vec![0.0; ccf_quiet().len()];
         let mut flux_quiet = 0.0;

@@ -23,6 +23,9 @@ pub struct Spot {
 }
 
 impl Spot {
+    /// Create a new spot on `star` and at the coordinates specified, where
+    /// latitude is 0 at the equator and both latitude and longitude are
+    /// measured in degrees.
     pub fn new(
         star: Arc<Star>,
         latitude: f64,
@@ -96,10 +99,11 @@ impl Spot {
                     }
                 }
             }
-        }; // TODO: I'm not clear on why I need a semicolon here
+        };
         profile
     }
 
+    /// Returns `true` if this spot currently exists.
     pub fn alive(&self, time: f64) -> bool {
         if !self.mortal {
             true
@@ -108,6 +112,7 @@ impl Spot {
         }
     }
 
+    /// Returns whether a spot _ever_ collides with the `other`.
     pub fn collides_with(&self, other: &Spot) -> bool {
         let bounds = BoundingShape::new(self, 0.0);
         let other_bounds = BoundingShape::new(other, 0.0);
