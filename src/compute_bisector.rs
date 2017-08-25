@@ -4,7 +4,6 @@ extern crate itertools;
 use self::itertools::cons_tuples;
 use linspace::linspace;
 
-/// CCFs point down for the purpose of this function
 pub fn compute_bisector(rv: &[f64], profile: &[f64]) -> Vec<f64> {
     let (min_index, min_value) = profile.iter().enumerate().fold(
         (0, std::f64::INFINITY),

@@ -2,7 +2,8 @@ extern crate rustfft;
 extern crate num_complex;
 use self::num_complex::Complex;
 
-pub fn set_resolution(rv: &Vec<f64>, ccf: &Vec<f64>) -> Vec<f64>{
+#[allow(dead_code)]
+pub fn set_resolution(rv: &Vec<f64>, ccf: &Vec<f64>) -> Vec<f64> {
     let sqrt = f64::sqrt;
     let ln = f64::ln;
     let exp = f64::exp;
@@ -11,7 +12,10 @@ pub fn set_resolution(rv: &Vec<f64>, ccf: &Vec<f64>) -> Vec<f64>{
     let resolution = 1e5;
     let profile_fwhm = c / resolution;
     let profile_sigma = profile_fwhm / (2.0 * sqrt(2.0 * ln(2.0)));
-    let kernel: Vec<Complex<f64>> = rv.iter().map(|r| exp(-r.powi(2)/(2.0*profile_sigma.powi(2)))).map(|n| Complex::new(n, 0.0)).collect();
+    let kernel: Vec<Complex<f64>> = rv.iter()
+        .map(|r| exp(-r.powi(2) / (2.0 * profile_sigma.powi(2))))
+        .map(|n| Complex::new(n, 0.0))
+        .collect();
 
     // FFT convolution
     let fft = rustfft::FFTplanner::new(false).plan_fft(rv.len());
@@ -27,7 +31,12 @@ pub fn set_resolution(rv: &Vec<f64>, ccf: &Vec<f64>) -> Vec<f64>{
     fft.process(&mut ccf_complex, fft_ccf.as_mut_slice());
 
     // Multiply both frequencies and compute inverse transform
-    let mut convolved_fft: Vec<Complex<f64>> = fft_kernel.iter().rev().zip(fft_ccf.iter()).map(|(k, c)| c*k).collect();
+    let mut convolved_fft: Vec<Complex<f64>> = fft_kernel
+        .iter()
+        .rev()
+        .zip(fft_ccf.iter())
+        .map(|(k, c)| c * k)
+        .collect();
 
     let mut output = vec![Complex::new(0.0, 0.0); rv.len()];
     inverse_fft.process(&mut convolved_fft, output.as_mut_slice());

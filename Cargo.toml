@@ -17,6 +17,7 @@ png = "*"
 rustfft = "*"
 num-complex = "*"
 gnuplot = "*"
+rayon = "*"
 
 [dependencies.cpython]
 version = "*"
@@ -24,3 +25,6 @@ features = ["extension-module"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+lto = true

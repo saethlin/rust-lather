@@ -25,9 +25,9 @@ impl BoundingShape {
             let lifetime = spot.time_disappear - spot.time_appear;
             let growth_time = 0.1 * lifetime;
             if (time - spot.time_appear).abs() < growth_time {
-                spot.radius *  (time - spot.time_appear).abs() / growth_time
+                spot.radius * (time - spot.time_appear).abs() / growth_time
             } else if (time - spot.time_disappear).abs() < growth_time {
-                spot.radius *  (time - spot.time_disappear).abs() / growth_time
+                spot.radius * (time - spot.time_disappear).abs() / growth_time
             } else {
                 spot.radius
             }
@@ -46,7 +46,7 @@ impl BoundingShape {
         }.rotated_y(spot.star.inclination - consts::FRAC_PI_2);
 
         let depth = (1.0 - radius.powi(2)).sqrt();
-        let circle_radius = (radius.powi(2) - (1.0-depth).powi(2)).sqrt();
+        let circle_radius = (radius.powi(2) - (1.0 - depth).powi(2)).sqrt();
         let circle_center = Point {
             x: center.x * depth,
             y: center.y * depth,
@@ -69,8 +69,10 @@ impl BoundingShape {
         let theta_x_max = -2.0 * ((a.x - (a.x.powi(2) + b.x.powi(2)).sqrt()) / b.x).atan();
         let theta_x_min = -2.0 * ((a.x + (a.x.powi(2) + b.x.powi(2)).sqrt()) / b.x).atan();
 
-        let x1 = circle_center.x + circle_radius * ((theta_x_max).cos() * a.x + (theta_x_max).sin() * b.x);
-        let x2 = circle_center.x + circle_radius * ((theta_x_min).cos() * a.x + (theta_x_min).sin() * b.x);
+        let x1 = circle_center.x +
+            circle_radius * ((theta_x_max).cos() * a.x + (theta_x_max).sin() * b.x);
+        let x2 = circle_center.x +
+            circle_radius * ((theta_x_min).cos() * a.x + (theta_x_min).sin() * b.x);
 
         let grid_interval = 2.0 / spot.star.grid_size as f64;
         let visible = x1 > 0.0 || x2 > 0.0;
@@ -173,35 +175,32 @@ impl BoundingShape {
         let z_max = floatrange(
             self.center.z + self.radius,
             self.center.z - self.radius,
-            -self.grid_interval/1.0
-        )
-        .filter(|z| self.on_spot(y, *z))
-        .next();
-        
+            -self.grid_interval / 1.0,
+        ).filter(|z| self.on_spot(y, *z))
+            .next();
+
         let z_min = floatrange(
             self.center.z - self.radius,
             self.center.z + self.radius,
-            self.grid_interval/1.0
-        )
-        .filter(|z| self.on_spot(y, *z))
-        .next();
+            self.grid_interval / 1.0,
+        ).filter(|z| self.on_spot(y, *z))
+            .next();
 
         if z_max.is_none() || z_min.is_none() {
             return None;
-        }
-        else {
+        } else {
             return Some(Bounds::new(z_min.unwrap(), z_max.unwrap()));
         }
     }
 
     fn on_spot(&self, y: f64, z: f64) -> bool {
         if !on_star(y, z) {
-            return false
+            return false;
         }
-        let x = (1.0 - (y*y + z*z)).sqrt();
-        let distance_squared = (y-self.center.y)*(y-self.center.y) +
-            (z-self.center.z)*(z-self.center.z) +
-            (x-self.center.x)*(x-self.center.x);
+        let x = (1.0 - (y * y + z * z)).sqrt();
+        let distance_squared = (y - self.center.y) * (y - self.center.y) +
+            (z - self.center.z) * (z - self.center.z) +
+            (x - self.center.x) * (x - self.center.x);
 
         distance_squared <= (self.radius * self.radius)
     }
@@ -216,5 +215,5 @@ impl BoundingShape {
 }
 
 fn on_star(y: f64, z: f64) -> bool {
-    (y*y + z*z) <= 1.0
+    (y * y + z * z) <= 1.0
 }

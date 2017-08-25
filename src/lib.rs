@@ -1,39 +1,50 @@
-#[macro_use] extern crate cpython;
+#[macro_use]
+extern crate cpython;
 extern crate numpy;
 extern crate ndarray;
-use numpy::{PyArray, PyArrayModule, IntoPyResult, IntoPyArray};
-use ndarray::ArrayViewD;
-
+extern crate rayon;
 use std::cell::RefCell;
 use cpython::PyResult;
-use simulation::Simulation as RustSimulation;
+use numpy::{IntoPyArray, IntoPyResult, PyArray, PyArrayModule};
+use ndarray::ArrayViewD;
 
-pub mod star;
-pub mod spot;
-pub mod profile;
-pub mod bounds;
-pub mod boundingshape;
-pub mod point;
+mod simulation;
+pub use simulation::Simulation;
+
+mod star;
+pub use star::Star;
+
+mod spot;
+pub use spot::Spot;
+
+mod profile;
+pub use self::profile::Profile;
+
 pub mod sun_ccfs;
-pub mod fit_rv;
-pub mod simulation;
-pub mod planck;
-pub mod compute_bisector;
-pub mod linspace;
-pub mod poly_fit_rv;
-pub mod resolution;
+
+mod linspace;
+pub use linspace::{floatrange, linspace};
+
+// Internals
+mod resolution;
+mod bounds;
+mod boundingshape;
+mod point;
+mod poly_fit_rv;
+mod planck;
+mod compute_bisector;
 
 py_module_initializer!(rather, initrather, PyInit_rather, |py, m| {
-    m.add_class::<Simulation>(py)?;
+    m.add_class::<PySimulation>(py)?;
     Ok(())
 });
 
-py_class!(class Simulation |py| {
+py_class!(class PySimulation |py| {
 
-    data sim: RefCell<RustSimulation>;
+    data sim: RefCell<Simulation>;
 
-    def __new__(_cls, filename: &str) -> PyResult<Simulation> {
-        Simulation::create_instance(py, RefCell::new(RustSimulation::new(filename)))
+    def __new__(_cls, filename: &str) -> PyResult<PySimulation> {
+        PySimulation::create_instance(py, RefCell::new(Simulation::new(filename)))
     }
 
     def __repr__(&self) ->PyResult<String> {

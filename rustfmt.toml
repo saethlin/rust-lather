@@ -1,3 +1,1 @@
 reorder_imported_names = true
-fn_args_density = "Compressed"
-fn_single_line = true

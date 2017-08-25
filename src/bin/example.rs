@@ -1,12 +1,11 @@
 extern crate rather;
 extern crate gnuplot;
+use gnuplot::*;
 
 fn main() {
-    let mut sim = rather::simulation::Simulation::new("/home/ben/rather/sun.cfg");
-    let time: Vec<f64> = rather::linspace::linspace(5.9, 7.0, 1000).collect();
+    let mut sim = rather::Simulation::new("sun.cfg");
+    let time: Vec<f64> = rather::linspace(0.0, 25.05, 100).collect();
     let rv: Vec<f64> = sim.observe_rv(&time, 4000e-10, 5000e-10).iter().map(|o| o.rv).collect();
-
-    use gnuplot::*;
 
     let mut fig = Figure::new();
     fig.axes2d()

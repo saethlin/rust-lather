@@ -8,6 +8,7 @@ pub struct Point {
     pub z: f64,
 }
 
+#[allow(dead_code)]
 impl Point {
     pub fn rotated_x(&self, angle: f64) -> Point {
         Point {
@@ -49,7 +50,11 @@ mod tests {
 
     #[test]
     fn x_rotation() {
-        let point = Point{x: 1.0, y: 1.0, z: 1.0}.rotated_x(consts::FRAC_PI_4);
+        let point = Point {
+            x: 1.0,
+            y: 1.0,
+            z: 1.0,
+        }.rotated_x(consts::FRAC_PI_4);
         assert_eq!(point.x, 1.0);
         assert!(is_close(point.y, 0.0));
         assert!(is_close(point.z, consts::SQRT_2));
@@ -57,7 +62,11 @@ mod tests {
 
     #[test]
     fn y_rotation() {
-        let point = Point{x: 1.0, y: 1.0, z: 1.0}.rotated_y(consts::FRAC_PI_4);
+        let point = Point {
+            x: 1.0,
+            y: 1.0,
+            z: 1.0,
+        }.rotated_y(consts::FRAC_PI_4);
         assert!(is_close(point.x, consts::SQRT_2));
         assert_eq!(point.y, 1.0);
         assert!(is_close(point.z, 0.0));
@@ -66,7 +75,11 @@ mod tests {
 
     #[test]
     fn z_rotation() {
-        let point = Point{x: 1.0, y: 1.0, z: 1.0}.rotated_z(consts::FRAC_PI_4);
+        let point = Point {
+            x: 1.0,
+            y: 1.0,
+            z: 1.0,
+        }.rotated_z(consts::FRAC_PI_4);
         assert!(is_close(point.x, 0.0));
         assert!(is_close(point.y, consts::SQRT_2));
         assert_eq!(point.z, 1.0);

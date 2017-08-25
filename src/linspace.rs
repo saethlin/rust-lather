@@ -96,7 +96,7 @@ mod tests {
     }
 
     #[test]
-     fn floatrange_bounds() {
+    fn floatrange_bounds() {
         assert_eq!(floatrange(0.0, 10.0, 1.0).next().unwrap(), 0.0);
         assert_eq!(floatrange(0.0, 10.0, 1.0).last().unwrap(), 10.0);
     }

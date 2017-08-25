@@ -8,6 +8,7 @@ use star::Star;
 use boundingshape::BoundingShape;
 use linspace::floatrange;
 
+/// A circular starspot
 pub struct Spot {
     pub star: Arc<Star>,
     pub latitude: f64,
@@ -22,8 +23,14 @@ pub struct Spot {
 }
 
 impl Spot {
-    pub fn new(star: Arc<Star>, latitude: f64, longitude: f64, fillfactor: f64, plage: bool, mortal: bool)
-        -> Self {
+    pub fn new(
+        star: Arc<Star>,
+        latitude: f64,
+        longitude: f64,
+        fillfactor: f64,
+        plage: bool,
+        mortal: bool,
+    ) -> Self {
         let temperature = star.temperature - star.spot_temp_diff;
         Spot {
             star: star,
@@ -46,7 +53,8 @@ impl Spot {
                 y_bounds.lower,
                 y_bounds.upper,
                 2.0 / self.star.grid_size as f64,
-            ).map(|y| { // TODO I should be able to filter_map here
+            ).map(|y| {
+                // TODO I should be able to filter_map here
                 if let Some(z_bounds) = bounds.z_bounds(y) {
                     self.star.limb_integral(&z_bounds, y)
                 } else {
@@ -104,17 +112,5 @@ impl Spot {
         let bounds = BoundingShape::new(self, 0.0);
         let other_bounds = BoundingShape::new(other, 0.0);
         bounds.collides_with(&other_bounds)
-    }
-}
-
-impl std::fmt::Debug for Spot {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("")
-            .field("latitude", &self.latitude)
-            .field("longitude", &self.longitude)
-            .field("radius", &self.radius)
-            .field("plage", &self.plage)
-            .field("mortal", &self.mortal)
-            .finish()
     }
 }

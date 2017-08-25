@@ -10,6 +10,7 @@ use std::sync::Arc;
 use planck::planck_integral;
 use poly_fit_rv::fit_rv;
 use compute_bisector::compute_bisector;
+use rayon::prelude::*;
 
 use star::Star;
 use spot::Spot;
@@ -19,18 +20,12 @@ pub struct Observation {
     pub bisector: Vec<f64>,
 }
 
+/// A Star with Spots that can be observed
 pub struct Simulation {
     pub star: Arc<Star>,
     pub spots: Vec<Spot>,
     dynamic_fill_factor: f64,
     generator: Arc<RwLock<rand::XorShiftRng>>,
-}
-
-pub fn normalize(vector: &mut Vec<f64>) {
-    let max = vector.iter().cloned().fold(std::f64::NAN, f64::max);
-    for item in vector.iter_mut() {
-        *item /= max;
-    }
 }
 
 macro_rules! get {
@@ -169,27 +164,35 @@ impl Simulation {
         }
     }
 
-    pub fn observe_flux(&mut self, time: &[f64], wavelength_min: f64, wavelength_max: f64)
-        -> Vec<f64> {
+    pub fn observe_flux(
+        &mut self,
+        time: &[f64],
+        wavelength_min: f64,
+        wavelength_max: f64,
+    ) -> Vec<f64> {
         let star_intensity = planck_integral(self.star.temperature, wavelength_min, wavelength_max);
         for spot in &mut self.spots {
             spot.intensity = planck_integral(spot.temperature, wavelength_min, wavelength_max) /
                 star_intensity;
         }
+        for t in time.iter() {
+            self.check_fill_factor(*t);
+        }
 
-        time.iter()
+        time.par_iter()
             .map(|t| {
-                self.check_fill_factor(*t);
                 let spot_flux: f64 = self.spots.iter().map(|s| s.get_flux(*t)).sum();
                 (self.star.flux_quiet - spot_flux) / self.star.flux_quiet
             })
             .collect()
     }
 
-    pub fn observe_rv(&mut self, time: &[f64], wavelength_min: f64, wavelength_max: f64)
-        -> Vec<Observation> {
-        let mut output = Vec::with_capacity(time.len());
-
+    pub fn observe_rv(
+        &mut self,
+        time: &[f64],
+        wavelength_min: f64,
+        wavelength_max: f64,
+    ) -> Vec<Observation> {
         let star_intensity = planck_integral(self.star.temperature, wavelength_min, wavelength_max);
         for spot in &mut self.spots {
             spot.intensity = planck_integral(spot.temperature, wavelength_min, wavelength_max) /
@@ -200,6 +203,44 @@ impl Simulation {
             self.check_fill_factor(*t);
         }
 
+
+        time.par_iter()
+            .map(|t| {
+                let mut spot_profile = vec![0.0; self.star.profile_active.len()];
+                for spot in self.spots.iter().filter(|s| s.alive(*t)) {
+                    let profile = spot.get_ccf(*t);
+                    for (total, this) in spot_profile.iter_mut().zip(profile.iter()) {
+                        *total += *this;
+                    }
+                }
+
+                for (spot, star) in spot_profile.iter_mut().zip(self.star.integrated_ccf.iter()) {
+                    *spot = *star - *spot;
+                }
+
+                /*
+                use resolution::set_resolution;
+                let spot_profile = set_resolution(&self.star.profile_active.rv, &spot_profile);
+                println!("{:?}", spot_profile);
+                panic!();
+                */
+
+                let rv = fit_rv(&self.star.profile_quiet.rv, &spot_profile) - self.star.zero_rv;
+
+                let bisector: Vec<f64> =
+                    compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
+                        .iter()
+                        .map(|b| b - self.star.zero_rv)
+                        .collect();
+
+                Observation {
+                    rv: rv,
+                    bisector: bisector,
+                }
+            })
+            .collect()
+
+        /*
         for t in time.iter() {
             let mut spot_profile = vec![0.0; self.star.profile_active.len()];
             for spot in self.spots.iter().filter(|s| s.alive(*t)) {
@@ -233,6 +274,7 @@ impl Simulation {
             })
         }
         output
+        */
     }
 
     // This is slow because the image is row-major, but we navigate the simulation in
@@ -243,8 +285,7 @@ impl Simulation {
         self.check_fill_factor(time);
         let star_intensity = planck_integral(self.star.temperature, 4000e-10, 7000e-10);
         for spot in &mut self.spots {
-            spot.intensity = planck_integral(spot.temperature, 4000e-10, 7000e-10) /
-                star_intensity;
+            spot.intensity = planck_integral(spot.temperature, 4000e-10, 7000e-10) / star_intensity;
         }
 
         let grid_interval = 2.0 / self.star.grid_size as f64;
@@ -252,24 +293,30 @@ impl Simulation {
         for spot in self.spots.iter().filter(|s| s.alive(time)) {
             let bounds = BoundingShape::new(spot, time);
             if let Some(y_bounds) = bounds.y_bounds() {
-                for y in floatrange((y_bounds.lower/grid_interval).round()*grid_interval,
-                    (y_bounds.upper/grid_interval).round()*grid_interval,
-                    grid_interval) {
+                for y in floatrange(
+                    (y_bounds.lower / grid_interval).round() * grid_interval,
+                    (y_bounds.upper / grid_interval).round() * grid_interval,
+                    grid_interval,
+                )
+                {
 
                     let y_index = ((y + 1.0) / 2.0 * 1000.0).round() as usize;
                     if let Some(z_bounds) = bounds.z_bounds(y) {
-                        for z in floatrange((z_bounds.lower/grid_interval).round()*grid_interval,
-                            (z_bounds.upper/grid_interval).round()*grid_interval,
-                            grid_interval) {
-                            let x = 1.0 - (y*y + z*z);
+                        for z in floatrange(
+                            (z_bounds.lower / grid_interval).round() * grid_interval,
+                            (z_bounds.upper / grid_interval).round() * grid_interval,
+                            grid_interval,
+                        )
+                        {
+                            let x = 1.0 - (y * y + z * z);
                             let x = f64::max(0.0, x);
                             let intensity = self.star.limb_brightness(x) * spot.intensity;
                             let z_index = ((-z + 1.0) / 2.0 * 1000.0).round() as usize;
                             let index = (z_index * 1000 + y_index) as usize;
-                            image[4*index] = (intensity * 255.0) as u8;
-                            image[4*index + 1] = (intensity * 131.0) as u8;
-                            image[4*index + 2] = 0;
-                            image[4*index + 3] = 255;
+                            image[4 * index] = (intensity * 255.0) as u8;
+                            image[4 * index + 1] = (intensity * 131.0) as u8;
+                            image[4 * index + 2] = 0;
+                            image[4 * index + 3] = 255;
                         }
                     }
                 }
@@ -287,24 +334,30 @@ impl Simulation {
         for spot in self.spots.iter().filter(|s| s.alive(time)) {
             let bounds = BoundingShape::new(spot, time);
             if let Some(y_bounds) = bounds.y_bounds() {
-                for y in floatrange((y_bounds.lower/grid_interval).round()*grid_interval,
-                    (y_bounds.upper/grid_interval).round()*grid_interval,
-                    grid_interval) {
+                for y in floatrange(
+                    (y_bounds.lower / grid_interval).round() * grid_interval,
+                    (y_bounds.upper / grid_interval).round() * grid_interval,
+                    grid_interval,
+                )
+                {
 
                     let y_index = ((y + 1.0) / 2.0 * 1000.0).round() as usize;
                     if let Some(z_bounds) = bounds.z_bounds(y) {
-                        for z in floatrange((z_bounds.lower/grid_interval).round()*grid_interval,
-                            (z_bounds.upper/grid_interval).round()*grid_interval,
-                            grid_interval) {
+                        for z in floatrange(
+                            (z_bounds.lower / grid_interval).round() * grid_interval,
+                            (z_bounds.upper / grid_interval).round() * grid_interval,
+                            grid_interval,
+                        )
+                        {
                             let z_index = ((z + 1.0) / 2.0 * 1000.0).round() as usize;
-                            let x = 1.0 - (y*y + z*z);
+                            let x = 1.0 - (y * y + z * z);
                             let x = f64::max(0.0, x);
                             let intensity = self.star.limb_brightness(x);
                             let index = (z_index * 1000 + y_index) as usize;
-                            image[4*index] = (intensity * 255.0) as u8;
-                            image[4*index + 1] = (intensity * 157.0) as u8;
-                            image[4*index + 2] = (intensity * 63.0) as u8;
-                            image[4*index + 3] = 255;
+                            image[4 * index] = (intensity * 255.0) as u8;
+                            image[4 * index + 1] = (intensity * 157.0) as u8;
+                            image[4 * index + 2] = (intensity * 63.0) as u8;
+                            image[4 * index + 3] = 255;
                         }
                     }
                 }
@@ -356,7 +409,7 @@ mod tests {
 
     #[test]
     fn load_config() {
-        let sim = Simulation::new("/home/ben/rather/sun.cfg");
+        let sim = Simulation::new("sun.cfg");
         assert_eq!(sim.dynamic_fill_factor, 0.0);
     }
 }

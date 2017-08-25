@@ -10,6 +10,7 @@ use linspace::linspace;
 static SOLAR_RADIUS: f64 = 6.96e8;
 static DAYS_TO_SECONDS: f64 = 86400.0;
 
+/// A star that can host spots
 pub struct Star {
     pub period: f64,
     pub inclination: f64,
@@ -28,8 +29,14 @@ pub struct Star {
 
 impl Star {
     pub fn new(
-        radius: f64, period: f64, inclination: f64, temperature: f64, spot_temp_diff: f64,
-        limb_linear: f64, limb_quadratic: f64, grid_size: usize
+        radius: f64,
+        period: f64,
+        inclination: f64,
+        temperature: f64,
+        spot_temp_diff: f64,
+        limb_linear: f64,
+        limb_quadratic: f64,
+        grid_size: usize,
     ) -> Self {
 
         let sqrt = f64::sqrt;
@@ -39,6 +46,7 @@ impl Star {
 
         let profile_quiet = Profile::new(rv(), ccf_quiet());
         let profile_active = Profile::new(rv(), ccf_active());
+
 
         let mut integrated_ccf = vec![0.0; ccf_quiet().len()];
         let mut flux_quiet = 0.0;
@@ -83,7 +91,7 @@ impl Star {
     }
 
     pub fn limb_brightness(&self, x: f64) -> f64 {
-        1.0 - self.limb_linear * (1.0-x) - self.limb_quadratic * (1.0-x).powi(2)
+        1.0 - self.limb_linear * (1.0 - x) - self.limb_quadratic * (1.0 - x).powi(2)
     }
 
     pub fn draw_rgba(&self, image: &mut Vec<u8>) {
@@ -136,17 +144,4 @@ pub fn limb_integral(z_bounds: &Bounds, y: f64, limb_linear: f64, limb_quadratic
                                3.0)) -
                  3.0 * (y * y - 1.0) * (limb_linear + 2.0 * limb_quadratic) *
                      (z_lower / x_lower).atan())
-}
-
-impl std::fmt::Debug for Star {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("")
-            .field("period", &self.period)
-            .field("longitude", &self.inclination)
-            .field("radius", &self.temperature)
-            .field("plage", &self.limb_linear)
-            .field("mortal", &self.limb_quadratic)
-            .field("grid_size", &self.grid_size)
-            .finish()
-    }
 }

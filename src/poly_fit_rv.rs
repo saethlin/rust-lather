@@ -16,16 +16,22 @@ pub fn fit_rv(rv: &[f64], ccf: &[f64]) -> f64 {
         },
     );
 
-    let peak_rv = rv.iter().skip(min_index-3).take(7).cloned();
-    let peak_ccf: Vec<f64> = ccf.iter().skip(min_index-3).take(7).cloned().collect();
-    let rv_matrix_values: Vec<f64> = std::iter::repeat(1.0).take(7).chain(peak_rv.clone()).chain(peak_rv.map(|x| x.powi(2))).collect();
+    let peak_rv = rv.iter().skip(min_index - 3).take(7).cloned();
+    let peak_ccf: Vec<f64> = ccf.iter().skip(min_index - 3).take(7).cloned().collect();
+    let rv_matrix_values: Vec<f64> = std::iter::repeat(1.0)
+        .take(7)
+        .chain(peak_rv.clone())
+        .chain(peak_rv.map(|x| x.powi(2)))
+        .collect();
 
     let rv_matrix_transpose = Matrix::new(3, 7, rv_matrix_values.clone());
     let rv_matrix = rv_matrix_transpose.transpose();
     let ccf_matrix = Matrix::new(7, 1, peak_ccf);
-    let coefficients = (rv_matrix_transpose.clone() * rv_matrix.clone()).inverse().unwrap() * rv_matrix_transpose * ccf_matrix;
+    let coefficients = (rv_matrix_transpose.clone() * rv_matrix.clone())
+        .inverse()
+        .unwrap() * rv_matrix_transpose * ccf_matrix;
 
-    -coefficients[[1, 0]]/(2.0*coefficients[[2,0]])
+    -coefficients[[1, 0]] / (2.0 * coefficients[[2, 0]])
 }
 
 #[cfg(test)]

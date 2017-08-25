@@ -1,14 +1,12 @@
 extern crate std;
 use std::iter;
 
-/// A cross-correlation profile, which stores its derivative inline to enable
-/// fast linear interpolation
+/// A cross-correlation profile, which can be shifted by fast linear interpolation
 pub struct Profile {
     pub rv: Vec<f64>,
     pub ccf: Vec<f64>,
     derivative: Vec<f64>,
     stepsize: f64,
-    cache: Vec<f64>,
 }
 
 impl Profile {
@@ -32,19 +30,19 @@ impl Profile {
             ccf: ccf.clone(),
             derivative: der,
             stepsize: (rv[0] - rv[1]).abs(),
-            cache: Vec::with_capacity(rv.len()*1000),
         }
     }
 
-    pub fn len(&self) -> usize { self.rv.len() }
+    pub fn len(&self) -> usize {
+        self.rv.len()
+    }
 
-    pub fn is_empty(&self) -> bool { self.len() == 0 }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 
     // TODO: Caching here is worth over 2x total performance
     pub fn shift(&self, velocity: f64) -> Vec<f64> {
-        //let index = ((velocity / self.max_velocity) + 1) / 2 * self.grid_size * self.rv.len();
-        //self.cache.split_at(index).1.split_at(self.rv.len()).0
-
         /// Uses the pre-computed derivative to compute a shifted version of
         /// this profile's cross-correlation function by linear interpolation
         ///

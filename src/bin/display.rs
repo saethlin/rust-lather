@@ -2,12 +2,12 @@ extern crate rather;
 extern crate png;
 
 fn main() {
-    use rather::simulation::Simulation;
+    use rather::Simulation;
     let mut sim = Simulation::new("/home/ben/rather/sun.cfg");
-    let mut pix_image = vec![0; 1000*1000*4];
+    let mut pix_image = vec![0; 1000 * 1000 * 4];
 
     sim.star.draw_rgba(&mut pix_image);
-    for time in rather::linspace::linspace(6.0, 8.0, 30) {
+    for time in rather::linspace(6.0, 8.0, 30) {
         sim.draw_rgba(time, &mut pix_image);
         save_png(&pix_image, &format!("{:.2}.png", time));
         sim.undraw_rgba(time, &mut pix_image);
