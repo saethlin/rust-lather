@@ -240,7 +240,9 @@ impl Simulation {
                 let bisector: Vec<f64> =
                     compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
                         .iter()
-                        .map(|b| b - self.star.zero_rv)
+                        // TODO: Should I actually return the points that come back from this?
+                        // Do the Y values actually matter?
+                        .map(|b| b.x - self.star.zero_rv)
                         .collect();
 
                 Observation {

@@ -1,50 +1,111 @@
 extern crate std;
-extern crate rgsl;
-extern crate itertools;
-use self::itertools::cons_tuples;
 use linspace::linspace;
+use std::cmp::Ordering;
 
-pub fn compute_bisector(rv: &[f64], profile: &[f64]) -> Vec<f64> {
-    let (min_index, min_value) = profile.iter().enumerate().fold(
-        (0, std::f64::INFINITY),
-        |(min_ind, min_val),
-         (current_ind, current_val)| {
-            if *current_val < min_val {
-                (current_ind, *current_val)
-            } else {
-                (min_ind, min_val)
-            }
-        },
+#[derive(Clone, Debug)]
+pub struct Point {
+    pub x: f64,
+    pub y: f64,
+}
+
+// May be able to make this not own its data in the future
+struct Interpolator {
+    data: Vec<Point>,
+    index: usize,
+}
+
+impl Interpolator {
+    pub fn from(data: Vec<Point>) -> Self {
+        Interpolator {
+            data: data,
+            index: 0,
+        }
+    }
+
+    // Optimization around nearest-neighbor check before attempting binary search
+    pub fn eval(&self, y: f64) -> f64 {
+        // Check that the requested value is in valid range
+        // Could also return an Err state here, but do we want to gum up the API that much?
+        // Is this error really recoverable?
+        // We also know that y is increasing, but that should probably be checked for
+        assert!(y >= self.data[0].y && y <= self.data[self.data.len() - 1].y);
+
+        let location = self.data.binary_search_by(|probe| if probe.y == y {
+            Ordering::Equal
+        } else if probe.y < y {
+            Ordering::Less
+        } else {
+            Ordering::Greater
+        });
+
+        let second_index = match location {
+            Ok(t) => return self.data[t].x,
+            Err(t) => t,
+        };
+        let first_index = second_index - 1;
+
+        let first = &self.data[first_index];
+        let second = &self.data[second_index];
+
+        let slope = (first.x - second.x) / (first.y - second.y);
+        let intercept = first.x - slope * first.y;
+
+        slope * y + intercept
+    }
+}
+
+pub fn compute_bisector(rv: &[f64], profile: &[f64]) -> Vec<Point> {
+
+    let mut data: Vec<Point> = rv.iter()
+        .zip(profile.iter())
+        .map(|(x, y)| Point { x: *x, y: *y })
+        .collect();
+
+    data.sort_by(|a, b| if a.x < b.x {
+        Ordering::Less
+    } else {
+        Ordering::Greater
+    });
+
+    let (min_index, min_value) = data.iter()
+        .enumerate()
+        .min_by(|a, b| if a.1.y < b.1.y {
+            Ordering::Less
+        } else {
+            Ordering::Greater
+        })
+        .unwrap();
+
+    // TODO probably don't collect these?
+    let right_profile: Vec<Point> = data.iter()
+        .zip(data.iter().skip(1))
+        .skip(min_index)
+        .take_while(|&(this, next)| this.y <= next.y)
+        .map(|(this, _)| this.clone())
+        .collect();
+
+    let left_profile: Vec<Point> = data.iter()
+        .rev()
+        .zip(data.iter().rev().skip(1))
+        .skip(profile.len() - min_index - 1)
+        .take_while(|&(this, next)| this.y <= next.y)
+        .map(|(this, _)| this.clone())
+        .collect();
+
+    let bis_max = f64::min(
+        right_profile.iter().last().unwrap().y,
+        left_profile.iter().last().unwrap().y,
     );
 
-    let (right_profile, right_rv): (Vec<f64>, Vec<f64>) =
-        cons_tuples(profile.iter().zip(profile.iter().skip(1)).zip(rv.iter()))
-            .skip(min_index)
-            .take_while(|&(this, next, _)| *this <= *next)
-            .map(|(this, _, rv)| (this, rv))
-            .unzip();
+    let right_interp = Interpolator::from(right_profile);
+    let left_interp = Interpolator::from(left_profile);
 
-    let (left_profile, left_rv): (Vec<f64>, Vec<f64>) =
-        cons_tuples(profile.iter().rev().zip(profile.iter().rev().skip(1)).zip(
-            rv.iter().rev(),
-        )).skip(profile.len()-min_index-1) // off-by-one correction to make sure both sides pick up the peak point
-            .take_while(|&(this, next, _)| *this <= *next)
-            .map(|(this, _, rv)| (this, rv))
-            .unzip();
-
-    let mut left_acc = rgsl::InterpAccel::new();
-    let left_spline = rgsl::Spline::new(&rgsl::InterpType::cspline(), left_rv.len()).unwrap();
-    left_spline.init(&left_profile, &left_rv);
-    let mut right_acc = rgsl::InterpAccel::new();
-    let right_spline = rgsl::Spline::new(&rgsl::InterpType::cspline(), right_rv.len()).unwrap();
-    right_spline.init(&right_profile, &right_rv);
-
-    let left_max = left_profile[left_profile.len() - 1];
-    let right_max = right_profile[right_profile.len() - 1];
-    let bis_end = f64::min(left_max, right_max);
-    linspace(min_value, bis_end, 1000)
-        .map(|ccf| {
-            (left_spline.eval(ccf, &mut left_acc) + right_spline.eval(ccf, &mut right_acc)) / 2.0
+    linspace(min_value.y, bis_max, 1000)
+        .map(|y| {
+            Point {
+                x: (left_interp.eval(y) + right_interp.eval(y)) / 2.0,
+                y: y,
+            }
         })
         .collect()
 }
@@ -64,15 +125,16 @@ mod tests {
     }
 
     #[test]
-    fn zero_centered_gaussian() {
+    fn gaussian() {
         let test_len = 101;
         let rv: Vec<f64> = linspace(-1.0, 1.0, test_len).collect();
         let ccf: Vec<f64> = rv.iter().map(|x| -(-(x - 0.5).powi(2)).exp()).collect();
         for bis in compute_bisector(&rv, &ccf).iter().skip(rv.len() / 10) {
+            println!("{:#?}", bis);
             assert!(
-                is_close(*bis, 0.5),
+                is_close(bis.x, 0.5),
                 "zero-centered bisector value {} is not close enough to 0",
-                bis
+                bis.x
             );
         }
     }
