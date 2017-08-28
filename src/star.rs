@@ -6,6 +6,7 @@ use bounds::Bounds;
 use sun_ccfs::*;
 use fit_rv::fit_rv;
 use linspace::linspace;
+use rayon::prelude::*;
 
 static SOLAR_RADIUS: f64 = 6.96e8;
 static DAYS_TO_SECONDS: f64 = 86400.0;
@@ -93,6 +94,34 @@ impl Star {
         1.0 - self.limb_linear * (1.0 - x) - self.limb_quadratic * (1.0 - x).powi(2)
     }
 
+    pub fn draw_rgba(&self) -> Vec<u8> {
+        let vecs: Vec<Vec<u8>> = linspace(-1.0, 1.0, 1000)
+            .collect::<Vec<_>>()
+            .par_iter()
+            .map(|y| {
+                let mut row = Vec::with_capacity(4000);
+                for z in linspace(1.0, -1.0, 1000) {
+                    let intensity = if (y.powi(2) + z.powi(2)) <= 1.0 {
+                        let x = f64::max(0.0, 1.0 - (z.powi(2) + y.powi(2)));
+                        self.limb_brightness(x)
+                    } else {
+                        0.0
+                    };
+                    row.push((intensity * 255.) as u8);
+                    row.push((intensity * 157.) as u8);
+                    row.push((intensity * 63.) as u8);
+                    row.push(255);
+                }
+                row
+            })
+            .collect();
+
+        vecs.iter()
+            .flat_map(|c| c.iter().cloned())
+            .collect::<Vec<u8>>()
+    }
+
+    /*
     pub fn draw_rgba(&self, image: &mut Vec<u8>) {
         image.clear();
         for y in linspace(-1.0, 1.0, 1000) {
@@ -110,6 +139,7 @@ impl Star {
             }
         }
     }
+    */
 }
 
 pub fn min(a: f64, b: f64) -> f64 {

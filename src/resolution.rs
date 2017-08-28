@@ -3,7 +3,7 @@ extern crate num_complex;
 use self::num_complex::Complex;
 
 #[allow(dead_code)]
-pub fn set_resolution(rv: &Vec<f64>, ccf: &Vec<f64>) -> Vec<f64> {
+pub fn set_resolution(rv: &[f64], ccf: &[f64]) -> Vec<f64> {
     let sqrt = f64::sqrt;
     let ln = f64::ln;
     let exp = f64::exp;

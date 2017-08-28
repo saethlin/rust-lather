@@ -1,5 +1,3 @@
-extern crate std;
-
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub struct Point {

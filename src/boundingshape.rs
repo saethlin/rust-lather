@@ -1,4 +1,3 @@
-extern crate std;
 use std::f64::consts;
 
 use point::Point;
@@ -176,20 +175,18 @@ impl BoundingShape {
             self.center.z + self.radius,
             self.center.z - self.radius,
             -self.grid_interval / 1.0,
-        ).filter(|z| self.on_spot(y, *z))
-            .next();
+        ).find(|z| self.on_spot(y, *z));
 
         let z_min = floatrange(
             self.center.z - self.radius,
             self.center.z + self.radius,
             self.grid_interval / 1.0,
-        ).filter(|z| self.on_spot(y, *z))
-            .next();
+        ).find(|z| self.on_spot(y, *z));
 
         if z_max.is_none() || z_min.is_none() {
-            return None;
+            None
         } else {
-            return Some(Bounds::new(z_min.unwrap(), z_max.unwrap()));
+            Some(Bounds::new(z_min.unwrap(), z_max.unwrap()))
         }
     }
 

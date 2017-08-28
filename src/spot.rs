@@ -1,4 +1,3 @@
-extern crate std;
 extern crate itertools;
 use std::f64::consts;
 use std::sync::Arc;

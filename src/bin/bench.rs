@@ -24,8 +24,7 @@ fn observe_rv(b: &mut Bencher) {
 
 fn draw_star(b: &mut Bencher) {
     let sim = Simulation::new("sun.cfg");
-    let mut image = vec![0; 1000 * 1000 * 4];
-    b.iter(|| sim.star.draw_rgba(&mut image));
+    b.iter(|| sim.star.draw_rgba());
 }
 
 fn draw_simulation(b: &mut Bencher) {

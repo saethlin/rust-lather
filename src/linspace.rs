@@ -1,5 +1,3 @@
-extern crate std;
-
 pub struct Linspace {
     index: usize,
     len: usize,

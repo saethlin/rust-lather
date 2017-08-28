@@ -4,7 +4,7 @@
 //! This project was inspired by a desire to improve upon the
 //! starspot modeling library named SOAP.
 
-#[deny(missing_docs)]
+#![deny(missing_docs)]
 #[macro_use]
 extern crate cpython;
 extern crate numpy;
@@ -81,7 +81,7 @@ mod py_interface {
                 bis_data.extend(bisector);
             }
             let bisectors = PyArray::new::<f64>(py, &np, &[rv.len(), observations[0].bisector.len()]);
-            for (input, mut output) in bis_data.iter().zip(bisectors.as_slice_mut().unwrap()) {
+            for (input, output) in bis_data.iter().zip(bisectors.as_slice_mut().unwrap()) {
                 *output = *input;
             }
 

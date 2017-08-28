@@ -1,4 +1,3 @@
-extern crate std;
 use linspace::linspace;
 use std::cmp::Ordering;
 
@@ -11,14 +10,12 @@ pub struct Point {
 // May be able to make this not own its data in the future
 struct Interpolator {
     data: Vec<Point>,
-    index: usize,
 }
 
 impl Interpolator {
     pub fn from(data: Vec<Point>) -> Self {
         Interpolator {
             data: data,
-            index: 0,
         }
     }
 
