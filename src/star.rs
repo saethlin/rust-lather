@@ -51,8 +51,9 @@ impl Star {
         let mut integrated_ccf = vec![0.0; ccf_quiet().len()];
         let mut flux_quiet = 0.0;
 
+        let mut ccf_shifted = vec![0.0; profile_quiet.len()];
         for y in linspace(-1.0, 1.0, grid_size) {
-            let ccf_shifted = profile_quiet.shift(y * equatorial_velocity);
+            profile_quiet.shift_into(y * equatorial_velocity, &mut ccf_shifted);
             let z_bound = sqrt(1.0 - y.powi(2));
             if z_bound < std::f64::EPSILON {
                 continue;
