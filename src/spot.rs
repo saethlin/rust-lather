@@ -72,6 +72,8 @@ impl Spot {
 
     pub fn get_ccf(&self, time: f64) -> Vec<f64> {
         let mut profile = vec![0.0; self.star.profile_active.len()];
+        let mut quiet_shifted = vec![0.0; self.star.profile_active.len()];
+        let mut active_shifted = vec![0.0; self.star.profile_quiet.len()];
         let bounds = BoundingShape::new(self, time);
         if let Some(y_bounds) = bounds.y_bounds() {
             for y in floatrange(
@@ -80,11 +82,13 @@ impl Spot {
                 2.0 / self.star.grid_size as f64,
             )
             {
-                let quiet_shifted = self.star.profile_quiet.shift(
+                self.star.profile_quiet.shift_into(
                     y * self.star.equatorial_velocity,
+                    &mut quiet_shifted,
                 );
-                let active_shifted = self.star.profile_active.shift(
+                self.star.profile_active.shift_into(
                     y * self.star.equatorial_velocity,
+                    &mut active_shifted,
                 );
 
                 if let Some(z_bounds) = bounds.z_bounds(y) {

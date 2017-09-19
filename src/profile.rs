@@ -71,6 +71,37 @@ impl Profile {
                 .collect()
         }
     }
+
+    pub fn shift_into(&self, velocity: f64, output: &mut Vec<f64>) {
+        let quotient = (velocity / self.stepsize).round() as isize;
+        let remainder = velocity - (quotient as f64) * self.stepsize;
+
+        let num_output = if velocity >= 0.0 {
+            iter::repeat(self.ccf[0])
+                .take(quotient as usize)
+                .chain(
+                    self.ccf
+                        .iter()
+                        .zip(self.derivative.iter())
+                        .take(self.ccf.len() - quotient as usize)
+                        .map(|(ccf, der)| ccf - remainder * der),
+                )
+                .zip(output.iter_mut())
+                .map(|(shifted, output)| *output = shifted)
+                .count()
+        } else {
+            self.ccf
+                .iter()
+                .zip(self.derivative.iter())
+                .skip((-quotient) as usize)
+                .map(|(ccf, der)| ccf - remainder * der)
+                .chain(iter::repeat(self.ccf[0]).take((-quotient) as usize))
+                .zip(output.iter_mut())
+                .map(|(shifted, output)| *output = shifted)
+                .count()
+        };
+        assert!(num_output == output.len());
+    }
 }
 
 #[cfg(test)]
