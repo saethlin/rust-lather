@@ -6,8 +6,8 @@ fn planck(wavelength: f64, temperature: f64) -> f64 {
     let c: f64 = 299792458.0;
     let h = 6.62606896e-34;
     let k_b = 1.380e-23;
-    2.0 * h * c.powi(2) * 1.0 /
-        (wavelength.powi(5) * (exp_m1((h * c) / (wavelength * k_b * temperature))))
+    2.0 * h * c.powi(2) * 1.0
+        / (wavelength.powi(5) * (exp_m1((h * c) / (wavelength * k_b * temperature))))
 }
 
 pub fn planck_integral(temperature: f64, wave_min: f64, wave_max: f64) -> f64 {

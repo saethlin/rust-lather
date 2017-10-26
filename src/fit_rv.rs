@@ -1,18 +1,15 @@
-extern crate std;
 extern crate rulinalg;
+extern crate std;
 use self::rulinalg::matrix::Matrix;
 use self::rulinalg::matrix::BaseMatrix;
 
 pub fn fit_rv(rv: &[f64], ccf: &[f64]) -> f64 {
     let (min_index, _) = ccf.iter().enumerate().fold(
         (0, std::f64::INFINITY),
-        |(min_ind, min_val),
-         (current_ind, current_val)| {
-            if *current_val < min_val {
-                (current_ind, *current_val)
-            } else {
-                (min_ind, min_val)
-            }
+        |(min_ind, min_val), (current_ind, current_val)| if *current_val < min_val {
+            (current_ind, *current_val)
+        } else {
+            (min_ind, min_val)
         },
     );
 

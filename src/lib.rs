@@ -7,8 +7,8 @@
 #![deny(missing_docs)]
 #[macro_use]
 extern crate cpython;
-extern crate numpy;
 extern crate ndarray;
+extern crate numpy;
 extern crate rayon;
 
 mod simulation;

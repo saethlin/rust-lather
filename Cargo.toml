@@ -25,6 +25,7 @@ rustfft = "2.0.0"
 num-complex = "0.1.40"
 gnuplot = "0.0.22"
 rayon = "0.8.2"
+GSL = "0.4.31"
 
 [dependencies.cpython]
 version = "0.1.0"

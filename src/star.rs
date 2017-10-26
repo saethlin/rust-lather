@@ -39,7 +39,6 @@ impl Star {
         limb_quadratic: f64,
         grid_size: usize,
     ) -> Self {
-
         let sqrt = f64::sqrt;
 
         let edge_velocity = (2.0 * consts::PI * radius * SOLAR_RADIUS) / (period * DAYS_TO_SECONDS);
@@ -157,21 +156,20 @@ pub fn limb_integral(z_bounds: &Bounds, y: f64, limb_linear: f64, limb_quadratic
     let x_upper = (1.0 - min(z_upper * z_upper + y * y, 1.0)).sqrt();
     let x_lower = (1.0 - min(z_lower * z_lower + y * y, 1.0)).sqrt();
 
-    1. / 6. *
-        (z_upper *
-             (3.0 * limb_linear * (x_upper - 2.0) +
-                  2.0 *
-                      (limb_quadratic * (3.0 * x_upper + 3.0 * y * y + z_upper * z_upper - 6.0) +
-                           3.0)) -
-             3.0 * (y * y - 1.0) * (limb_linear + 2.0 * limb_quadratic) *
-                 (z_upper / x_upper).atan()) -
-        1. / 6. *
-            (z_lower *
-                 (3.0 * limb_linear * (x_lower - 2.0) +
-                      2.0 *
-                          (limb_quadratic *
-                               (3.0 * x_lower + 3.0 * y * y + z_lower * z_lower - 6.0) +
-                               3.0)) -
-                 3.0 * (y * y - 1.0) * (limb_linear + 2.0 * limb_quadratic) *
-                     (z_lower / x_lower).atan())
+    1. / 6.
+        * (z_upper
+            * (3.0 * limb_linear * (x_upper - 2.0)
+                + 2.0
+                    * (limb_quadratic * (3.0 * x_upper + 3.0 * y * y + z_upper * z_upper - 6.0)
+                        + 3.0))
+            - 3.0 * (y * y - 1.0) * (limb_linear + 2.0 * limb_quadratic)
+                * (z_upper / x_upper).atan())
+        - 1. / 6.
+            * (z_lower
+                * (3.0 * limb_linear * (x_lower - 2.0)
+                    + 2.0
+                        * (limb_quadratic * (3.0 * x_lower + 3.0 * y * y + z_lower * z_lower - 6.0)
+                            + 3.0))
+                - 3.0 * (y * y - 1.0) * (limb_linear + 2.0 * limb_quadratic)
+                    * (z_lower / x_lower).atan())
 }

@@ -1,6 +1,6 @@
-extern crate std;
 extern crate ini;
 extern crate rand;
+extern crate std;
 use std::iter;
 use std::sync::RwLock;
 use std::fmt::Write;
@@ -25,10 +25,8 @@ pub struct Observation {
 
 /// A model of a star with spots that can be observed.
 pub struct Simulation {
-    #[doc(hidden)]
-    pub star: Arc<Star>,
-    #[doc(hidden)]
-    pub spots: Vec<Spot>,
+    #[doc(hidden)] pub star: Arc<Star>,
+    #[doc(hidden)] pub spots: Vec<Spot>,
     dynamic_fill_factor: f64,
     generator: Arc<RwLock<rand::XorShiftRng>>,
 }
@@ -64,10 +62,8 @@ impl Simulation {
     /// Construct a new Star from a config file.
     pub fn new(filename: &str) -> Simulation {
         let mut error = String::new();
-        let file = Ini::load_from_file(filename).expect(&format!(
-            "Could not open config file {}",
-            filename
-        ));
+        let file = Ini::load_from_file(filename)
+            .expect(&format!("Could not open config file {}", filename));
 
         file.section(Some("star")).expect(&format!(
             "Missing section start in config file {}",
@@ -119,7 +115,6 @@ impl Simulation {
             dynamic_fill_factor: dynamic_fill_factor,
             generator: Arc::new(RwLock::new(rand::XorShiftRng::new_unseeded())),
         }
-
     }
 
     fn check_fill_factor(&mut self, time: f64) {
@@ -134,9 +129,9 @@ impl Simulation {
         let long_range = Range::new(0.0, 360.0);
 
         if current_fill_factor < self.dynamic_fill_factor {
-            let mut generator = self.generator.write().expect(
-                "Simulation RNG lock was poisoned by another panic",
-            );
+            let mut generator = self.generator
+                .write()
+                .expect("Simulation RNG lock was poisoned by another panic");
 
             while current_fill_factor < self.dynamic_fill_factor {
                 let new_fill_factor = iter::repeat(())
@@ -180,8 +175,8 @@ impl Simulation {
     ) -> Vec<f64> {
         let star_intensity = planck_integral(self.star.temperature, wavelength_min, wavelength_max);
         for spot in &mut self.spots {
-            spot.intensity = planck_integral(spot.temperature, wavelength_min, wavelength_max) /
-                star_intensity;
+            spot.intensity =
+                planck_integral(spot.temperature, wavelength_min, wavelength_max) / star_intensity;
         }
         for t in time.iter() {
             self.check_fill_factor(*t);
@@ -205,8 +200,8 @@ impl Simulation {
     ) -> Vec<Observation> {
         let star_intensity = planck_integral(self.star.temperature, wavelength_min, wavelength_max);
         for spot in &mut self.spots {
-            spot.intensity = planck_integral(spot.temperature, wavelength_min, wavelength_max) /
-                star_intensity;
+            spot.intensity =
+                planck_integral(spot.temperature, wavelength_min, wavelength_max) / star_intensity;
         }
 
         for t in time.iter() {
@@ -237,12 +232,12 @@ impl Simulation {
 
                 let rv = fit_rv(&self.star.profile_quiet.rv, &spot_profile) - self.star.zero_rv;
 
-                let bisector: Vec<f64> =
-                    compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
+                let bisector: Vec<f64> = compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
                         .iter()
                         // TODO: Should I actually return the points that come back from this?
                         // Do the Y values actually matter?
-                        .map(|b| b.x - self.star.zero_rv)
+                        //.map(|b| b.x - self.star.zero_rv)
+                        .map(|b| b - self.star.zero_rv)
                         .collect();
 
                 Observation {
@@ -275,17 +270,14 @@ impl Simulation {
                     (y_bounds.lower / grid_interval).round() * grid_interval,
                     (y_bounds.upper / grid_interval).round() * grid_interval,
                     grid_interval,
-                )
-                {
-
+                ) {
                     let y_index = ((y + 1.0) / 2.0 * 1000.0).round() as usize;
                     if let Some(z_bounds) = bounds.z_bounds(y) {
                         for z in floatrange(
                             (z_bounds.lower / grid_interval).round() * grid_interval,
                             (z_bounds.upper / grid_interval).round() * grid_interval,
                             grid_interval,
-                        )
-                        {
+                        ) {
                             let x = 1.0 - (y * y + z * z);
                             let x = f64::max(0.0, x);
                             let intensity = self.star.limb_brightness(x) * spot.intensity;
@@ -317,17 +309,14 @@ impl Simulation {
                     (y_bounds.lower / grid_interval).round() * grid_interval,
                     (y_bounds.upper / grid_interval).round() * grid_interval,
                     grid_interval,
-                )
-                {
-
+                ) {
                     let y_index = ((y + 1.0) / 2.0 * 1000.0).round() as usize;
                     if let Some(z_bounds) = bounds.z_bounds(y) {
                         for z in floatrange(
                             (z_bounds.lower / grid_interval).round() * grid_interval,
                             (z_bounds.upper / grid_interval).round() * grid_interval,
                             grid_interval,
-                        )
-                        {
+                        ) {
                             let z_index = ((z + 1.0) / 2.0 * 1000.0).round() as usize;
                             let x = 1.0 - (y * y + z * z);
                             let x = f64::max(0.0, x);

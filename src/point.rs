@@ -1,5 +1,4 @@
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct Point {
     pub x: f64,
     pub y: f64,
@@ -68,7 +67,6 @@ mod tests {
         assert!(is_close(point.x, consts::SQRT_2));
         assert_eq!(point.y, 1.0);
         assert!(is_close(point.z, 0.0));
-
     }
 
     #[test]

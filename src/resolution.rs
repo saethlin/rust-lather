@@ -1,5 +1,5 @@
-extern crate rustfft;
 extern crate num_complex;
+extern crate rustfft;
 use self::num_complex::Complex;
 
 #[allow(dead_code)]

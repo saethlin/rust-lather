@@ -80,24 +80,22 @@ impl Spot {
                 y_bounds.lower,
                 y_bounds.upper,
                 2.0 / self.star.grid_size as f64,
-            )
-            {
-                self.star.profile_quiet.shift_into(
-                    y * self.star.equatorial_velocity,
-                    &mut quiet_shifted,
-                );
-                self.star.profile_active.shift_into(
-                    y * self.star.equatorial_velocity,
-                    &mut active_shifted,
-                );
+            ) {
+                self.star
+                    .profile_quiet
+                    .shift_into(y * self.star.equatorial_velocity, &mut quiet_shifted);
+                self.star
+                    .profile_active
+                    .shift_into(y * self.star.equatorial_velocity, &mut active_shifted);
 
                 if let Some(z_bounds) = bounds.z_bounds(y) {
                     let limb_integral = self.star.limb_integral(&z_bounds, y);
-                    for (tot, qshift, ashift) in
-                        cons_tuples(profile.iter_mut().zip(quiet_shifted.iter()).zip(
-                            active_shifted.iter(),
-                        ))
-                    {
+                    for (tot, qshift, ashift) in cons_tuples(
+                        profile
+                            .iter_mut()
+                            .zip(quiet_shifted.iter())
+                            .zip(active_shifted.iter()),
+                    ) {
                         *tot += (qshift - self.intensity * ashift) * limb_integral;
                     }
                 }

@@ -1,6 +1,6 @@
-extern crate png;
 extern crate lather;
-use lather::{Simulation, linspace};
+extern crate png;
+use lather::{linspace, Simulation};
 
 fn main() {
     let mut sim = Simulation::new("sun.cfg");

@@ -2,7 +2,7 @@
 extern crate bencher;
 use bencher::Bencher;
 extern crate lather;
-use lather::{Simulation, linspace};
+use lather::{linspace, Simulation};
 
 fn create_sim(b: &mut Bencher) {
     b.iter(|| Simulation::new("sun.cfg"));
