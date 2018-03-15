@@ -1,11 +1,8 @@
-extern crate ini;
-extern crate rand;
-extern crate std;
 use std::iter;
 use std::sync::RwLock;
 use std::fmt::Write;
-use self::ini::Ini;
-use self::rand::distributions::{IndependentSample, LogNormal, Range};
+use ini::Ini;
+use rand::distributions::{IndependentSample, LogNormal, Range};
 use std::sync::Arc;
 use planck::planck_integral;
 use fit_rv::fit_rv;
@@ -24,11 +21,12 @@ pub struct Observation {
 }
 
 /// A model of a star with spots that can be observed.
+#[derive(Debug)]
 pub struct Simulation {
     #[doc(hidden)] pub star: Arc<Star>,
     #[doc(hidden)] pub spots: Vec<Spot>,
     dynamic_fill_factor: f64,
-    generator: Arc<RwLock<rand::XorShiftRng>>,
+    generator: Arc<RwLock<::rand::StdRng>>,
 }
 
 macro_rules! get {
@@ -113,7 +111,7 @@ impl Simulation {
             star: star,
             spots: spots,
             dynamic_fill_factor: dynamic_fill_factor,
-            generator: Arc::new(RwLock::new(rand::XorShiftRng::new_unseeded())),
+            generator: Arc::new(RwLock::new(::rand::StdRng::new().unwrap())),
         }
     }
 
@@ -152,9 +150,7 @@ impl Simulation {
 
                 let collides = self.spots
                     .iter()
-                    .filter(|s| {
-                        s.alive(new_spot.time_appear) || s.alive(new_spot.time_disappear)
-                    })
+                    .filter(|s| s.alive(new_spot.time_appear) || s.alive(new_spot.time_disappear))
                     .any(|s| new_spot.collides_with(s));
 
                 if !collides {
@@ -207,7 +203,6 @@ impl Simulation {
         for t in time.iter() {
             self.check_fill_factor(*t);
         }
-
 
         time.par_iter()
             .map(|t| {
@@ -334,6 +329,7 @@ impl Simulation {
     }
 }
 
+/*
 impl std::fmt::Debug for Simulation {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         use std::fmt::Write;
@@ -369,6 +365,7 @@ impl std::fmt::Debug for Simulation {
         f.write_str(message.as_str())
     }
 }
+*/
 
 #[cfg(test)]
 mod tests {

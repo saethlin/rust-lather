@@ -1,5 +1,5 @@
-extern crate std;
 use std::f64::consts;
+use std;
 
 use profile::Profile;
 use bounds::Bounds;
@@ -12,6 +12,7 @@ static SOLAR_RADIUS: f64 = 6.96e8;
 static DAYS_TO_SECONDS: f64 = 86400.0;
 
 /// A star that can host spots
+#[derive(Debug)]
 pub struct Star {
     pub period: f64,
     pub inclination: f64,

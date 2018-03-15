@@ -1,6 +1,5 @@
-extern crate num_complex;
-extern crate rustfft;
-use self::num_complex::Complex;
+use num_complex::Complex;
+use rustfft;
 
 #[allow(dead_code)]
 pub fn set_resolution(rv: &[f64], ccf: &[f64]) -> Vec<f64> {

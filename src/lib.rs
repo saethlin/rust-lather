@@ -7,9 +7,17 @@
 #![deny(missing_docs)]
 #[macro_use]
 extern crate cpython;
+extern crate ini;
+extern crate itertools;
 extern crate ndarray;
+extern crate num_complex;
 extern crate numpy;
+extern crate quadrature;
+extern crate rand;
 extern crate rayon;
+extern crate rgsl;
+extern crate rulinalg;
+extern crate rustfft;
 
 mod simulation;
 pub use simulation::Simulation;

@@ -24,8 +24,11 @@ png = "0.9.0"
 rustfft = "2.0.0"
 num-complex = "0.1.40"
 gnuplot = "0.0.22"
-rayon = "0.8.2"
-GSL = "0.4.31"
+rayon = "0.8"
+
+[dependencies.GSL]
+version = "0.4"
+features = ["v2"]
 
 [dependencies.cpython]
 version = "0.1.0"

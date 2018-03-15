@@ -1,5 +1,4 @@
-extern crate quadrature;
-use self::quadrature::clenshaw_curtis::integrate;
+use quadrature::clenshaw_curtis::integrate;
 
 fn planck(wavelength: f64, temperature: f64) -> f64 {
     let exp_m1 = f64::exp_m1;

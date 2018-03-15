@@ -1,13 +1,13 @@
-extern crate itertools;
 use std::f64::consts;
 use std::sync::Arc;
-use self::itertools::cons_tuples;
+use itertools::cons_tuples;
 
 use star::Star;
 use boundingshape::BoundingShape;
 use linspace::floatrange;
 
 /// A circular starspot
+#[derive(Debug)]
 pub struct Spot {
     pub star: Arc<Star>,
     pub latitude: f64,

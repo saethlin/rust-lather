@@ -1,7 +1,8 @@
-extern crate std;
 use std::iter;
+use std;
 
 /// A cross-correlation profile, which can be shifted by fast linear interpolation.
+#[derive(Debug)]
 pub struct Profile {
     pub rv: Vec<f64>,
     pub ccf: Vec<f64>,
