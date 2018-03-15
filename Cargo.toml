@@ -12,26 +12,26 @@ keywords = ["astronomy"]
 categories = ["science", "simulation"]
 
 [dependencies]
-rand = "0.3.16"
-rust-ini = "0.10.0"
-itertools = "0.6.1"
-quadrature = "0.1.2"
-rulinalg = "0.4.2"
-numpy = "0.2.1"
-ndarray = "0.9.1"
-bencher = "0.1.4"
-png = "0.9.0"
-rustfft = "2.0.0"
-num-complex = "0.1.40"
-gnuplot = "0.0.22"
-rayon = "0.8"
+rand = "0.4"
+rust-ini = "0.10"
+itertools = "0.7"
+quadrature = "0.1"
+rulinalg = "0.4"
+numpy = "0.2"
+ndarray = "0.9" # Held back by numpy
+bencher = "0.1"
+png = "0.11"
+rustfft = "2.0"
+num-complex = "0.1"
+gnuplot = "0.0"
+rayon = "1.0"
 
 [dependencies.GSL]
 version = "0.4"
 features = ["v2"]
 
 [dependencies.cpython]
-version = "0.1.0"
+version = "0.1" # Held back by numpy
 features = ["extension-module"]
 
 [lib]

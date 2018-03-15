@@ -1,7 +1,11 @@
+import pip
+pip.main(['install', 'setuptools-rust'])
+
 from setuptools import setup
 from setuptools_rust import Binding, RustExtension
 
-setup(name='lather',
+setup(
+    name='lather',
     version='0.0.0',
     description='A Python extension for modeling starspot effects on radial'
     'velocity and photometric observations, inspired by complaints about the'
@@ -15,11 +19,10 @@ setup(name='lather',
         'Development Status :: 3 - Alpha',
     ],
     rust_extensions=[
-        RustExtension('lather.lather', 'Cargo.toml', binding=Binding.RustCPython)
+        RustExtension(
+            'lather.lather', 'Cargo.toml', binding=Binding.RustCPython)
     ],
     packages=['lather'],
     zip_safe=False,
     install_requires=['numpy'],
-    python_requires='==3.6',
-    setup_requires=['setuptools_rust==0.7.1'],
 )
