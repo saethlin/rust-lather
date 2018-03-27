@@ -137,6 +137,8 @@ impl BoundingShape {
         if self.radius == 0.0 || !self.visible {
             return None;
         }
+        return self.z_bounds_edge(y);
+        /*
         if self.on_edge {
             return self.z_bounds_edge(y);
         }
@@ -162,6 +164,7 @@ impl BoundingShape {
             + self.circle_radius * (self.a.z * theta2.cos() + self.b.z * theta2.sin());
 
         Some(Bounds::new(z2, z1))
+        */
     }
 
     fn z_bounds_edge(&self, y: f64) -> Option<Bounds> {
@@ -190,7 +193,7 @@ impl BoundingShape {
         }
     }
 
-    fn on_spot(&self, y: f64, z: f64) -> bool {
+    pub fn on_spot(&self, y: f64, z: f64) -> bool {
         if !on_star(y, z) {
             return false;
         }

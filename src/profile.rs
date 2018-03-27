@@ -73,11 +73,11 @@ impl Profile {
         }
     }
 
-    pub fn shift_into(&self, velocity: f64, output: &mut Vec<f64>) {
+    pub fn shift_into(&self, velocity: f64, output: &mut [f64]) {
         let quotient = (velocity / self.stepsize).round() as isize;
         let remainder = velocity - (quotient as f64) * self.stepsize;
 
-        let num_output = if velocity >= 0.0 {
+        if velocity >= 0.0 {
             iter::repeat(self.ccf[0])
                 .take(quotient as usize)
                 .chain(
@@ -88,8 +88,7 @@ impl Profile {
                         .map(|(ccf, der)| ccf - remainder * der),
                 )
                 .zip(output.iter_mut())
-                .map(|(shifted, output)| *output = shifted)
-                .count()
+                .for_each(|(shifted, output)| *output = shifted)
         } else {
             self.ccf
                 .iter()
@@ -98,10 +97,8 @@ impl Profile {
                 .map(|(ccf, der)| ccf - remainder * der)
                 .chain(iter::repeat(self.ccf[0]).take((-quotient) as usize))
                 .zip(output.iter_mut())
-                .map(|(shifted, output)| *output = shifted)
-                .count()
+                .for_each(|(shifted, output)| *output = shifted);
         };
-        assert!(num_output == output.len());
     }
 }
 
