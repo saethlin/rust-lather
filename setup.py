@@ -1,5 +1,5 @@
 import pip
-pip.main(['install', 'setuptools-rust'])
+pip.main(['install', 'setuptools-rust==0.8.1'])
 
 from setuptools import setup
 from setuptools_rust import Binding, RustExtension
