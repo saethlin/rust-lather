@@ -7,8 +7,10 @@ use boundingshape::BoundingShape;
 use linspace::floatrange;
 
 /// A circular starspot
-#[derive(Debug)]
+#[derive(Derivative)]
+#[derivative(Debug)]
 pub struct Spot {
+    #[derivative(Debug = "ignore")]
     pub star: Arc<Star>,
     pub latitude: f64,
     pub longitude: f64,

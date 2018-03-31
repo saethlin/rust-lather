@@ -177,11 +177,9 @@ mod tests {
         let shifted = test_profile.shift(0.0);
         for (original, shifted) in ccf_quiet().iter().zip(shifted.iter()) {
             assert_eq!(
-                original,
-                shifted,
+                original, shifted,
                 "zero-shifted profile value is {} but should be {}",
-                original,
-                shifted
+                original, shifted
             );
         }
     }
@@ -192,11 +190,9 @@ mod tests {
         let shifted = test_profile.shift(-0.0);
         for (original, shifted) in ccf_quiet().iter().zip(shifted.iter()) {
             assert_eq!(
-                original,
-                shifted,
+                original, shifted,
                 "negative zero-shifted profile value is {} but should be {}",
-                original,
-                shifted
+                original, shifted
             );
         }
     }

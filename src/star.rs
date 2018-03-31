@@ -12,7 +12,8 @@ static SOLAR_RADIUS: f64 = 6.96e8;
 static DAYS_TO_SECONDS: f64 = 86400.0;
 
 /// A star that can host spots
-#[derive(Debug)]
+#[derive(Derivative)]
+#[derivative(Debug)]
 pub struct Star {
     pub period: f64,
     pub inclination: f64,
@@ -24,8 +25,11 @@ pub struct Star {
     pub flux_quiet: f64,
     pub zero_rv: f64,
     pub equatorial_velocity: f64,
+    #[derivative(Debug = "ignore")]
     pub integrated_ccf: Vec<f64>,
+    #[derivative(Debug = "ignore")]
     pub profile_active: Profile,
+    #[derivative(Debug = "ignore")]
     pub profile_quiet: Profile,
 }
 

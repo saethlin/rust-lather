@@ -31,18 +31,14 @@ mod tests {
     fn in_order_test() {
         let bounds = Bounds::new(0.0, 1.0);
         assert_eq!(
-            bounds.lower,
-            0.0,
+            bounds.lower, 0.0,
             "lower value is {} but should be {}",
-            bounds.lower,
-            0.0
+            bounds.lower, 0.0
         );
         assert_eq!(
-            bounds.upper,
-            1.0,
+            bounds.upper, 1.0,
             "lower value is {} but should be {}",
-            bounds.upper,
-            1.0
+            bounds.upper, 1.0
         );
     }
 
@@ -50,18 +46,14 @@ mod tests {
     fn out_of_order_test() {
         let bounds = Bounds::new(1.0, 0.0);
         assert_eq!(
-            bounds.lower,
-            0.0,
+            bounds.lower, 0.0,
             "lower value is {} but should be {}",
-            bounds.lower,
-            0.0
+            bounds.lower, 0.0
         );
         assert_eq!(
-            bounds.upper,
-            1.0,
+            bounds.upper, 1.0,
             "lower value is {} but should be {}",
-            bounds.upper,
-            1.0
+            bounds.upper, 1.0
         );
     }
 }

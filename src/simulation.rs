@@ -21,11 +21,15 @@ pub struct Observation {
 }
 
 /// A model of a star with spots that can be observed.
-#[derive(Debug)]
+#[derive(Derivative)]
+#[derivative(Debug)]
 pub struct Simulation {
-    #[doc(hidden)] pub star: Arc<Star>,
-    #[doc(hidden)] pub spots: Vec<Spot>,
+    #[doc(hidden)]
+    pub star: Arc<Star>,
+    #[doc(hidden)]
+    pub spots: Vec<Spot>,
     dynamic_fill_factor: f64,
+    #[derivative(Debug = "ignore")]
     generator: Arc<RwLock<::rand::StdRng>>,
 }
 

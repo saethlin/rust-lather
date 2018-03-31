@@ -7,6 +7,8 @@
 #![deny(missing_docs)]
 #[macro_use]
 extern crate cpython;
+#[macro_use]
+extern crate derivative;
 extern crate ini;
 extern crate itertools;
 extern crate ndarray;
@@ -62,11 +64,11 @@ mod py_interface {
         }
 
         def __repr__(&self) ->PyResult<String> {
-            Ok(format!("{:?}", self.sim(py).borrow()))
+            Ok(format!("{:#?}", self.sim(py).borrow()))
         }
 
         def __str__(&self) ->PyResult<String> {
-            Ok(format!("{:?}", self.sim(py).borrow()))
+            Ok(format!("{:#?}", self.sim(py).borrow()))
         }
 
         def observe_flux(&self, time: PyArray, wavelength_min: f64, wavelength_max: f64) -> PyResult<PyArray> {
