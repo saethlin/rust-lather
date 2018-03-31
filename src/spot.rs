@@ -1,6 +1,7 @@
 use std::f64::consts;
 use std::sync::Arc;
 use itertools::cons_tuples;
+use dim::si::{MeterPerSecond, MPS, Unitless};
 
 use star::Star;
 use boundingshape::BoundingShape;
@@ -72,10 +73,10 @@ impl Spot {
         }
     }
 
-    pub fn get_ccf(&self, time: f64) -> Vec<f64> {
-        let mut profile = vec![0.0; self.star.profile_active.len()];
-        let mut quiet_shifted = vec![0.0; self.star.profile_active.len()];
-        let mut active_shifted = vec![0.0; self.star.profile_quiet.len()];
+    pub fn get_ccf(&self, time: f64) -> Vec<Unitless<f64>> {
+        let mut profile = vec![Unitless::new(0.0); self.star.profile_active.len()];
+        let mut quiet_shifted = vec![Unitless::new(0.0); self.star.profile_active.len()];
+        let mut active_shifted = vec![Unitless::new(0.0); self.star.profile_quiet.len()];
         let bounds = BoundingShape::new(self, time);
         if let Some(y_bounds) = bounds.y_bounds() {
             for y in floatrange(
@@ -85,10 +86,10 @@ impl Spot {
             ) {
                 self.star
                     .profile_quiet
-                    .shift_into(y * self.star.equatorial_velocity, &mut quiet_shifted);
+                    .shift_into(y * self.star.equatorial_velocity, quiet_shifted.as_mut_slice());
                 self.star
                     .profile_active
-                    .shift_into(y * self.star.equatorial_velocity, &mut active_shifted);
+                    .shift_into(y * self.star.equatorial_velocity, active_shifted.as_mut_slice());
 
                 if let Some(z_bounds) = bounds.z_bounds(y) {
                     let limb_integral = self.star.limb_integral(&z_bounds, y);
@@ -98,7 +99,7 @@ impl Spot {
                             .zip(quiet_shifted.iter())
                             .zip(active_shifted.iter()),
                     ) {
-                        *tot += (qshift - self.intensity * ashift) * limb_integral;
+                        *tot += (*qshift - self.intensity * (*ashift)) * limb_integral;
                     }
                 }
             }

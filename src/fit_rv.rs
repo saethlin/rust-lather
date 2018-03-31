@@ -1,10 +1,11 @@
 use rulinalg::matrix::Matrix;
 use rulinalg::matrix::BaseMatrix;
 use std;
+use dim::si::{MeterPerSecond, Unitless, MPS};
 
-pub fn fit_rv(rv: &[f64], ccf: &[f64]) -> f64 {
+pub fn fit_rv(rv: &[MeterPerSecond<f64>], ccf: &[Unitless<f64>]) -> MeterPerSecond<f64> {
     let (min_index, _) = ccf.iter().enumerate().fold(
-        (0, std::f64::INFINITY),
+        (0, Unitless::new(std::f64::INFINITY)),
         |(min_ind, min_val), (current_ind, current_val)| {
             if *current_val < min_val {
                 (current_ind, *current_val)
@@ -15,11 +16,11 @@ pub fn fit_rv(rv: &[f64], ccf: &[f64]) -> f64 {
     );
 
     let peak_rv = rv.iter().skip(min_index - 3).take(7).cloned();
-    let peak_ccf: Vec<f64> = ccf.iter().skip(min_index - 3).take(7).cloned().collect();
-    let rv_matrix_values: Vec<f64> = std::iter::repeat(1.0)
+    let peak_ccf: Vec<_> = ccf.iter().skip(min_index - 3).take(7).cloned().collect();
+    let rv_matrix_values: Vec<_> = std::iter::repeat(1.0 * MPS)
         .take(7)
         .chain(peak_rv.clone())
-        .chain(peak_rv.map(|x| x.powi(2)))
+        .chain(peak_rv.map(|x| x * x))
         .collect();
 
     let rv_matrix_transpose = Matrix::new(3, 7, rv_matrix_values.clone());

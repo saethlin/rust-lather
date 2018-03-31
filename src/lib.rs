@@ -9,6 +9,7 @@
 extern crate cpython;
 #[macro_use]
 extern crate derivative;
+extern crate dimensioned as dim;
 extern crate ini;
 extern crate itertools;
 extern crate ndarray;
@@ -85,10 +86,10 @@ mod py_interface {
             let time_vec: Vec<f64> = time.iter().cloned().collect();
             let observations = self.sim(py).borrow_mut().observe_rv(&time_vec, wavelength_min, wavelength_max);
 
-            let rv: Vec<f64> = observations.iter().map(|o| o.rv).collect();
+            let rv: Vec<_> = observations.iter().map(|o| o.rv.value_unsafe).collect();
             let mut bis_data = Vec::<f64>::with_capacity(rv.len() * observations[0].bisector.len());
             for bisector in observations.iter().map(|o| o.bisector.clone()) {
-                bis_data.extend(bisector);
+                bis_data.extend(bisector.iter().map(|b| b.value_unsafe));
             }
             let bisectors = PyArray::new::<f64>(py, &np, &[rv.len(), observations[0].bisector.len()]);
             for (input, output) in bis_data.iter().zip(bisectors.as_slice_mut().unwrap()) {
@@ -98,4 +99,26 @@ mod py_interface {
             Ok((rv.into_pyarray(py, &np), bisectors))
         }
     });
+}
+
+use dim::traits::Dimensioned;
+use std::ops::Neg;
+
+pub trait Abs {
+    fn abs(self) -> Self;
+}
+
+impl<
+    T: Dimensioned<Value = V, Units = U> + Neg<Output = T>,
+    V: PartialOrd<f64> + Neg<Output = V>,
+    U,
+> Abs for T
+{
+    fn abs(self) -> Self {
+        if self.value_unsafe() < &0.0 {
+            -self
+        } else {
+            self
+        }
+    }
 }

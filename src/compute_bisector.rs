@@ -3,7 +3,9 @@ use linspace::linspace;
 use rgsl;
 use std;
 
-pub fn compute_bisector(rv: &[f64], profile: &[f64]) -> Vec<f64> {
+use dim::si::{MeterPerSecond, Unitless};
+
+pub fn compute_bisector(rv: &[MeterPerSecond<f64>], profile: &[Unitless<f64>]) -> Vec<MeterPerSecond<f64>> {
     let (min_index, min_value) = profile.iter().enumerate().fold(
         (0, std::f64::INFINITY),
         |(min_ind, min_val), (current_ind, current_val)| {
@@ -15,14 +17,14 @@ pub fn compute_bisector(rv: &[f64], profile: &[f64]) -> Vec<f64> {
         },
     );
 
-    let (right_profile, right_rv): (Vec<f64>, Vec<f64>) = cons_tuples(
+    let (right_profile, right_rv): (Vec<_>, Vec<_>) = cons_tuples(
         profile.iter().zip(profile.iter().skip(1)).zip(rv.iter()),
     ).skip(min_index)
         .take_while(|&(this, next, _)| *this <= *next)
         .map(|(this, _, rv)| (this, rv))
         .unzip();
 
-    let (left_profile, left_rv): (Vec<f64>, Vec<f64>) = cons_tuples(profile.iter().rev().zip(profile.iter().rev().skip(1)).zip(
+    let (left_profile, left_rv): (Vec<_>, Vec<_>) = cons_tuples(profile.iter().rev().zip(profile.iter().rev().skip(1)).zip(
             rv.iter().rev(),
         )).skip(profile.len()-min_index-1) // off-by-one correction to make sure both sides pick up the peak point
             .take_while(|&(this, next, _)| *this <= *next)

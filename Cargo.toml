@@ -26,6 +26,7 @@ num-complex = "0.1"
 gnuplot = "0.0"
 rayon = "1.0"
 derivative = "1.0"
+dimensioned = "0.6"
 
 [dependencies.GSL]
 version = "0.4"

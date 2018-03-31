@@ -9,15 +9,17 @@ use fit_rv::fit_rv;
 use compute_bisector::compute_bisector;
 use rayon::prelude::*;
 
+use dim::si::{MeterPerSecond, Unitless};
+
 use star::Star;
 use spot::Spot;
 
 /// An observed radial velocity and line bisector.
 pub struct Observation {
     /// The radial velocity value in m/s.
-    pub rv: f64,
+    pub rv: MeterPerSecond<f64>,
     /// The line bisector in m/s.
-    pub bisector: Vec<f64>,
+    pub bisector: Vec<MeterPerSecond<f64>>,
 }
 
 /// A model of a star with spots that can be observed.
@@ -210,7 +212,7 @@ impl Simulation {
 
         time.par_iter()
             .map(|t| {
-                let mut spot_profile = vec![0.0; self.star.profile_active.len()];
+                let mut spot_profile = vec![Unitless::new(0.0); self.star.profile_active.len()];
                 for spot in self.spots.iter().filter(|s| s.alive(*t)) {
                     let profile = spot.get_ccf(*t);
                     for (total, this) in spot_profile.iter_mut().zip(profile.iter()) {
@@ -229,14 +231,14 @@ impl Simulation {
                 panic!();
                 */
 
-                let rv = fit_rv(&self.star.profile_quiet.rv, &spot_profile) - self.star.zero_rv;
+                let rv = fit_rv(self.star.profile_quiet.rv.as_slice(), spot_profile.as_slice()) - self.star.zero_rv;
 
-                let bisector: Vec<f64> = compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
+                let bisector: Vec<_> = compute_bisector(self.star.profile_quiet.rv.as_slice(), spot_profile.as_slice())
                         .iter()
                         // TODO: Should I actually return the points that come back from this?
                         // Do the Y values actually matter?
                         //.map(|b| b.x - self.star.zero_rv)
-                        .map(|b| b - self.star.zero_rv)
+                        .map(|b| *b - self.star.zero_rv)
                         .collect();
 
                 Observation {

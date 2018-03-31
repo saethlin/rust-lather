@@ -1,13 +1,16 @@
 use std::iter;
 use std;
 
+use Abs;
+use dim::si::{MeterPerSecond, Unitless, S, M};
+
 /// A cross-correlation profile, which can be shifted by fast linear interpolation.
 #[derive(Debug)]
 pub struct Profile {
-    pub rv: Vec<f64>,
-    pub ccf: Vec<f64>,
+    pub rv: Vec<MeterPerSecond<f64>>,
+    pub ccf: Vec<Unitless<f64>>,
     derivative: Vec<f64>,
-    stepsize: f64,
+    stepsize: MeterPerSecond<f64>,
 }
 
 impl Profile {
@@ -15,19 +18,19 @@ impl Profile {
     /// cross-correlation function, and computes the derivative to enable fast
     /// linear interpolation to simulate viewing the profile at different
     /// relative velocities.
-    pub fn new(rv: Vec<f64>, ccf: Vec<f64>) -> Self {
+    pub fn new(rv: Vec<MeterPerSecond<f64>>, ccf: Vec<Unitless<f64>>) -> Self {
         let ccf_diff = ccf.windows(2).map(|s| s[0] - s[1]);
         let rv_diff = rv.windows(2).map(|s| s[0] - s[1]);
 
         let der = ccf_diff
             .zip(rv_diff)
-            .map(|(c, r)| c / r)
+            .map(|(c, r)| c.value_unsafe / r.value_unsafe)
             .chain(std::iter::once(0.0))
             .collect();
 
         Profile {
-            rv: rv.clone(),
-            ccf: ccf.clone(),
+            rv: rv,
+            ccf: ccf,
             derivative: der,
             stepsize: (rv[0] - rv[1]).abs(),
         }
@@ -47,11 +50,11 @@ impl Profile {
     /// this profile's cross-correlation function by linear interpolation.
     /// The units of velocity must match those of the radial velocity used
     /// to construct this profile.
-    pub fn shift(&self, velocity: f64) -> Vec<f64> {
+    pub fn shift_into(&self, velocity: MeterPerSecond<f64>, output: &mut [Unitless<f64>]) {
         let quotient = (velocity / self.stepsize).round() as isize;
         let remainder = velocity - (quotient as f64) * self.stepsize;
 
-        if velocity >= 0.0 {
+        if velocity >= 0.0 * M/S {
             iter::repeat(self.ccf[0])
                 .take(quotient as usize)
                 .chain(
@@ -59,33 +62,7 @@ impl Profile {
                         .iter()
                         .zip(self.derivative.iter())
                         .take(self.ccf.len() - quotient as usize)
-                        .map(|(ccf, der)| ccf - remainder * der),
-                )
-                .collect()
-        } else {
-            self.ccf
-                .iter()
-                .zip(self.derivative.iter())
-                .skip((-quotient) as usize)
-                .map(|(ccf, der)| ccf - remainder * der)
-                .chain(iter::repeat(self.ccf[0]).take((-quotient) as usize))
-                .collect()
-        }
-    }
-
-    pub fn shift_into(&self, velocity: f64, output: &mut [f64]) {
-        let quotient = (velocity / self.stepsize).round() as isize;
-        let remainder = velocity - (quotient as f64) * self.stepsize;
-
-        if velocity >= 0.0 {
-            iter::repeat(self.ccf[0])
-                .take(quotient as usize)
-                .chain(
-                    self.ccf
-                        .iter()
-                        .zip(self.derivative.iter())
-                        .take(self.ccf.len() - quotient as usize)
-                        .map(|(ccf, der)| ccf - remainder * der),
+                        .map(|(ccf, der)| *ccf - remainder * (*der * S / M)),
                 )
                 .zip(output.iter_mut())
                 .for_each(|(shifted, output)| *output = shifted)
@@ -94,7 +71,7 @@ impl Profile {
                 .iter()
                 .zip(self.derivative.iter())
                 .skip((-quotient) as usize)
-                .map(|(ccf, der)| ccf - remainder * der)
+                .map(|(ccf, der)| *ccf - remainder * (*der * S / M))
                 .chain(iter::repeat(self.ccf[0]).take((-quotient) as usize))
                 .zip(output.iter_mut())
                 .for_each(|(shifted, output)| *output = shifted);

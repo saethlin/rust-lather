@@ -1,6 +1,8 @@
 use std::f64::consts;
 use std;
 
+use dim::si::{MeterPerSecond, MPS, Unitless};
+
 use profile::Profile;
 use bounds::Bounds;
 use sun_ccfs::*;
@@ -23,10 +25,10 @@ pub struct Star {
     pub limb_quadratic: f64,
     pub grid_size: usize,
     pub flux_quiet: f64,
-    pub zero_rv: f64,
-    pub equatorial_velocity: f64,
+    pub zero_rv: MeterPerSecond<f64>,
+    pub equatorial_velocity: MeterPerSecond<f64>,
     #[derivative(Debug = "ignore")]
-    pub integrated_ccf: Vec<f64>,
+    pub integrated_ccf: Vec<Unitless<f64>>,
     #[derivative(Debug = "ignore")]
     pub profile_active: Profile,
     #[derivative(Debug = "ignore")]
@@ -47,17 +49,18 @@ impl Star {
         let sqrt = f64::sqrt;
 
         let edge_velocity = (2.0 * consts::PI * radius * SOLAR_RADIUS) / (period * DAYS_TO_SECONDS);
-        let equatorial_velocity = edge_velocity * (inclination * consts::PI / 180.0).sin();
+        //TODO Apply units earlier
+        let equatorial_velocity = edge_velocity * (inclination * consts::PI / 180.0).sin() * MPS;
 
         let profile_quiet = Profile::new(rv(), ccf_quiet());
         let profile_active = Profile::new(rv(), ccf_active());
 
-        let mut integrated_ccf = vec![0.0; ccf_quiet().len()];
+        let mut integrated_ccf = vec![Unitless::new(0.0); ccf_quiet().len()];
         let mut flux_quiet = 0.0;
 
-        let mut ccf_shifted = vec![0.0; profile_quiet.len()];
+        let mut ccf_shifted = vec![Unitless::new(0.0); profile_quiet.len()];
         for y in linspace(-1.0, 1.0, grid_size) {
-            profile_quiet.shift_into(y * equatorial_velocity, &mut ccf_shifted);
+            profile_quiet.shift_into(y * equatorial_velocity, ccf_shifted.as_mut_slice());
             let z_bound = sqrt(1.0 - y.powi(2));
             if z_bound < std::f64::EPSILON {
                 continue;
@@ -83,7 +86,7 @@ impl Star {
             limb_quadratic: limb_quadratic,
             grid_size: grid_size,
             flux_quiet: flux_quiet,
-            zero_rv: fit_rv(&rv(), &integrated_ccf),
+            zero_rv: fit_rv(rv().as_slice(), integrated_ccf.as_slice()),
             equatorial_velocity: equatorial_velocity,
             integrated_ccf: integrated_ccf,
             profile_active: profile_active,
