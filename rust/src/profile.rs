@@ -151,61 +151,10 @@ mod tests {
     }
 
     #[test]
-    fn pos_zero_shift_len() {
-        let test_profile = Profile::new(rv(), ccf_quiet());
-        let shifted = test_profile.shift(0.0);
-        assert_eq!(
-            shifted.len(),
-            ccf_quiet().len(),
-            "zero-shifted length is {} but should be {}",
-            shifted.len(),
-            ccf_quiet().len()
-        );
-    }
-
-    #[test]
-    fn neg_zero_shift_len() {
-        let test_profile = Profile::new(rv(), ccf_quiet());
-        let shifted = test_profile.shift(0.0);
-        assert_eq!(
-            shifted.len(),
-            ccf_quiet().len(),
-            "negative zero-shifted length is {} but should be {}",
-            shifted.len(),
-            ccf_quiet().len()
-        );
-    }
-
-    #[test]
-    fn pos_shift_len() {
-        let test_profile = Profile::new(rv(), ccf_quiet());
-        let shifted = test_profile.shift(1.5);
-        assert_eq!(
-            shifted.len(),
-            ccf_quiet().len(),
-            "postive-shifted length is {} but should be {}",
-            shifted.len(),
-            ccf_quiet().len()
-        );
-    }
-
-    #[test]
-    fn neg_shift_len() {
-        let test_profile = Profile::new(rv(), ccf_quiet());
-        let shifted = test_profile.shift(-1.5);
-        assert_eq!(
-            shifted.len(),
-            ccf_quiet().len(),
-            "negative-shifted length is {} but should be {}",
-            shifted.len(),
-            ccf_quiet().len()
-        );
-    }
-
-    #[test]
     fn pos_zero_shift() {
         let test_profile = Profile::new(rv(), ccf_quiet());
-        let shifted = test_profile.shift(0.0);
+        let mut shifted = vec![0.0; test_profile.len()];
+        test_profile.shift_into(0.0, &mut shifted);
         for (original, shifted) in ccf_quiet().iter().zip(shifted.iter()) {
             assert_eq!(
                 original, shifted,
@@ -218,7 +167,8 @@ mod tests {
     #[test]
     fn neg_zero_shift() {
         let test_profile = Profile::new(rv(), ccf_quiet());
-        let shifted = test_profile.shift(-0.0);
+        let mut shifted = vec![0.0; test_profile.len()];
+        test_profile.shift_into(-0.0, &mut shifted);
         for (original, shifted) in ccf_quiet().iter().zip(shifted.iter()) {
             assert_eq!(
                 original, shifted,

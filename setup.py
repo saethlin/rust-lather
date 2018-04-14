@@ -1,28 +1,29 @@
-import pip
-pip.main(['install', 'setuptools-rust==0.8.1'])
-
 from setuptools import setup
-from setuptools_rust import Binding, RustExtension
+
+def build_native(spec):
+    # build an example rust library
+    build = spec.add_external_build(
+        cmd=['cargo', 'build', '--release'],
+        path='./rust'
+    )
+
+    spec.add_cffi_module(
+        module_path='lather._native',
+        dylib=lambda: build.find_dylib('lather', in_path='target/release'),
+        header_filename=lambda: build.find_header('lather.h', in_path='target'),
+        rtld_flags=['NOW', 'NODELETE']
+    )
 
 setup(
     name='lather',
     version='0.0.0',
-    description='A Python extension for modeling starspot effects on radial'
-    'velocity and photometric observations, inspired by complaints about the'
-    'SOAP project of similar goals.',
-    url='https://github.com/saethlin/rust-lather',
-    author='Benjamin Kimock',
-    author_email='kimockb@gmail.com',
-    license='MIT/Apache-2.0',
-    keywords='science simulation astronomy',
-    classifiers=[
-        'Development Status :: 3 - Alpha',
-    ],
-    rust_extensions=[
-        RustExtension(
-            'lather.lather', 'Cargo.toml', binding=Binding.RustCPython)
-    ],
     packages=['lather'],
     zip_safe=False,
-    install_requires=['numpy'],
+    platforms='any',
+    setup_requires=['milksnake'],
+    install_requires=['milksnake'],
+    milksnake_tasks=[
+        build_native
+    ]
 )
+

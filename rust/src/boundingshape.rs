@@ -116,84 +116,67 @@ impl BoundingShape {
         let x_min = self.circle_center.x
             + self.circle_radius * (theta_y_min.cos() * self.a.y + theta_y_min.sin() * self.b.y);
 
-        let x_bounds = Bounds::new(x_min, x_max);
-        let x_max = x_bounds.upper;
-        let x_min = x_bounds.lower;
-
         if x_min < 0.0 && x_max < 0.0 {
-            return None;
+            None
+        } else {
+            Some(Bounds::new(y_min, y_max))
         }
-        if x_max < 0.0 {
-            return Some(Bounds::new(y_min, 1.0));
-        }
-        if x_min < 0.0 {
-            return Some(Bounds::new(-1.0, y_max));
-        }
-
-        Some(Bounds::new(y_min, y_max))
     }
 
-    pub fn z_bounds(&self, y: f64) -> Option<Bounds> {
-        if self.radius == 0.0 || !self.visible {
-            return None;
-        }
-        return self.z_bounds_edge(y);
-        /*
-        if self.on_edge {
-            return self.z_bounds_edge(y);
-        }
+    pub fn z_bounds(&self, y: f64, guess: &mut Option<Bounds>) -> Option<Bounds> {
+        let new_bounds = match guess {
+            &mut Some(ref the_guess) => self.z_bounds_ansatz(y, &the_guess),
+            &mut None => self.z_bounds_brute(y),
+        };
 
-        let y_mod = (y - self.circle_center.y) / self.circle_radius;
-        let tmp = (self.a.y.powi(2) + self.b.y.powi(2) - y_mod.powi(2)).sqrt();
-        // TODO: When is this nan, and is that covered by another check?
-        if tmp.is_nan() {
-            return None;
-        }
-
-        let mut theta1 = 2.0 * (self.b.y + tmp).atan2(self.a.y + y_mod);
-        let mut theta2 = 2.0 * (self.b.y - tmp).atan2(self.a.y + y_mod);
-
-        if self.center.y < 0.0 {
-            theta1 += consts::PI;
-            theta2 += consts::PI;
-        }
-
-        let z1: f64 = self.circle_center.z
-            + self.circle_radius * (self.a.z * theta1.cos() + self.b.z * theta1.sin());
-        let z2: f64 = self.circle_center.z
-            + self.circle_radius * (self.a.z * theta2.cos() + self.b.z * theta2.sin());
-
-        Some(Bounds::new(z2, z1))
-        */
+        *guess = new_bounds.clone();
+        new_bounds
     }
 
-    /*
-    fn z_bounds_guess(&self, y: f64) -> Option<Bounds> {
-        let y_mod = (y - self.circle_center.y) / self.circle_radius;
-        let tmp = (self.a.y.powi(2) + self.b.y.powi(2) - y_mod.powi(2)).sqrt();
-        // TODO: When is this nan, and is that covered by another check?
-        if tmp.is_nan() {
-            return None;
+    fn z_bounds_ansatz(&self, y: f64, guess: &Bounds) -> Option<Bounds> {
+        use linspace::floatrange;
+        let z_max = if !self.on_spot(y, guess.upper) {
+            // Guess must be above the edge, walk down until on it
+            floatrange(
+                guess.upper,
+                self.center.z - self.radius,
+                -self.grid_interval / 1.0,
+            ).find(|z| self.on_spot(y, *z))
+        } else {
+            // Guess must be below the edge, walk up until not on it
+            floatrange(
+                guess.upper,
+                self.center.z + self.radius,
+                self.grid_interval / 1.0,
+            ).find(|z| !self.on_spot(y, *z))
+        };
+
+        let z_min = if !self.on_spot(y, guess.lower) {
+            // Guess must be below the edge, walk up until on it
+            floatrange(
+                guess.lower,
+                self.center.z + self.radius,
+                self.grid_interval / 1.0,
+            ).find(|z| self.on_spot(y, *z))
+        } else {
+            // Guess must be above the edge, walk down until not on it
+            floatrange(
+                guess.lower,
+                self.center.z - self.radius,
+                -self.grid_interval / 1.0,
+            ).find(|z| !self.on_spot(y, *z))
+        };
+
+        // NOTE: This function used to have a special case for if the edges of a spot
+        // passed to the far hemisphere. Those checks now appear to be unnecessary.
+        if let (Some(z_min), Some(z_max)) = (z_min, z_max) {
+            Some(Bounds::new(z_min, z_max))
+        } else {
+            None
         }
-
-        let mut theta1 = 2.0 * (self.b.y + tmp).atan2(self.a.y + y_mod);
-        let mut theta2 = 2.0 * (self.b.y - tmp).atan2(self.a.y + y_mod);
-
-        if self.center.y < 0.0 {
-            theta1 += consts::PI;
-            theta2 += consts::PI;
-        }
-
-        let z1: f64 = self.circle_center.z
-            + self.circle_radius * (self.a.z * theta1.cos() + self.b.z * theta1.sin());
-        let z2: f64 = self.circle_center.z
-            + self.circle_radius * (self.a.z * theta2.cos() + self.b.z * theta2.sin());
-
-        Some(Bounds::new(z2, z1))
     }
-    */
 
-    fn z_bounds_edge(&self, y: f64) -> Option<Bounds> {
+    fn z_bounds_brute(&self, y: f64) -> Option<Bounds> {
         use linspace::floatrange;
 
         if y == -1.0 {

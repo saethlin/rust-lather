@@ -53,13 +53,15 @@ impl Spot {
     pub fn get_flux(&self, time: f64) -> f64 {
         let bounds = BoundingShape::new(self, time);
         if let Some(y_bounds) = bounds.y_bounds() {
+            let mut current_z_bounds = None;
+
             let limb_integral: f64 = floatrange(
                 y_bounds.lower,
                 y_bounds.upper,
                 2.0 / self.star.grid_size as f64,
             ).map(|y| {
                 // TODO I should be able to filter_map here
-                if let Some(z_bounds) = bounds.z_bounds(y) {
+                if let Some(z_bounds) = bounds.z_bounds(y, &mut current_z_bounds) {
                     self.star.limb_integral(&z_bounds, y)
                 } else {
                     0.0
@@ -77,6 +79,7 @@ impl Spot {
         let mut quiet_shifted = vec![0.0; self.star.profile_active.len()];
         let mut active_shifted = vec![0.0; self.star.profile_quiet.len()];
         let bounds = BoundingShape::new(self, time);
+        let mut current_z_bounds = None;
         if let Some(y_bounds) = bounds.y_bounds() {
             for y in floatrange(
                 y_bounds.lower,
@@ -89,7 +92,8 @@ impl Spot {
                 self.star
                     .profile_active
                     .shift_into(y * self.star.equatorial_velocity, &mut active_shifted);
-                if let Some(z_bounds) = bounds.z_bounds(y) {
+
+                if let Some(z_bounds) = bounds.z_bounds(y, &mut current_z_bounds) {
                     let limb_integral = self.star.limb_integral(&z_bounds, y);
                     for (tot, qshift, ashift) in cons_tuples(
                         profile
