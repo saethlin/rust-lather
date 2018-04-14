@@ -3,6 +3,7 @@ name = "lather"
 version = "0.0.0"
 authors = ["Benjamin Kimock <kimockb@gmail.com>"]
 license = "MIT/Apache-2.0"
+build = "build.rs"
 
 description = "A Rust crate and Python extension for modeling starspot effects on radial velocity and photometric observations, inspired by complaints about the SOAP project of similar goals."
 repository = "https://github.com/saethlin/rust-lather"
@@ -20,7 +21,6 @@ rust-ini = "0.10"
 itertools = "0.7"
 quadrature = "0.1"
 rulinalg = "0.4"
-numpy = "0.2"
 ndarray = "0.9" # Held back by numpy
 bencher = "0.1"
 png = "0.11"
@@ -35,12 +35,11 @@ faster = {git = "https://github.com/AdamNiederer/faster", optional = true}
 version = "0.4"
 features = ["v2"]
 
-[dependencies.cpython]
-version = "0.1" # Held back by numpy
-features = ["extension-module"]
-
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+[build-dependencies]
+cbindgen = "0.5.2"
 
 [profile.release]
 lto = true
