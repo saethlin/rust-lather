@@ -99,11 +99,7 @@ pub unsafe extern "C" fn simulation_observe_flux(
         return 0 as *const f64;
     }
     let time_slice = std::slice::from_raw_parts(times, n_times);
-    let output = (*sim).observe_flux(
-        time_slice,
-        wave_start,
-        wave_end,
-    );
+    let output = (*sim).observe_flux(time_slice, wave_start, wave_end);
     let ptr = output.as_ptr();
     std::mem::forget(output);
     ptr

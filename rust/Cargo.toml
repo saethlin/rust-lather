@@ -43,3 +43,4 @@ cbindgen = "0.5.2"
 
 [profile.release]
 lto = true
+

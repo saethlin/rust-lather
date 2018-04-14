@@ -264,6 +264,7 @@ impl Simulation {
 
         for spot in self.spots.iter().filter(|s| s.alive(time)) {
             let bounds = BoundingShape::new(spot, time);
+            let mut current_z_bounds = None;
             if let Some(y_bounds) = bounds.y_bounds() {
                 for y in floatrange(
                     (y_bounds.lower / grid_interval).round() * grid_interval,
@@ -271,7 +272,7 @@ impl Simulation {
                     grid_interval,
                 ) {
                     let y_index = ((y + 1.0) / 2.0 * 1000.0).round() as usize;
-                    if let Some(z_bounds) = bounds.z_bounds(y) {
+                    if let Some(z_bounds) = bounds.z_bounds(y, &mut current_z_bounds) {
                         for z in floatrange(
                             (z_bounds.lower / grid_interval).round() * grid_interval,
                             (z_bounds.upper / grid_interval).round() * grid_interval,
@@ -292,84 +293,7 @@ impl Simulation {
             }
         }
     }
-
-    /// Removes the spots that would be drawn by [draw_rgba](#method.draw_rgba).
-    pub fn undraw_rgba(&mut self, time: f64, image: &mut Vec<u8>) {
-        use boundingshape::BoundingShape;
-        use linspace::floatrange;
-        self.check_fill_factor(time);
-
-        let grid_interval = 2.0 / self.star.grid_size as f64;
-
-        for spot in self.spots.iter().filter(|s| s.alive(time)) {
-            let bounds = BoundingShape::new(spot, time);
-            if let Some(y_bounds) = bounds.y_bounds() {
-                for y in floatrange(
-                    (y_bounds.lower / grid_interval).round() * grid_interval,
-                    (y_bounds.upper / grid_interval).round() * grid_interval,
-                    grid_interval,
-                ) {
-                    let y_index = ((y + 1.0) / 2.0 * 1000.0).round() as usize;
-                    if let Some(z_bounds) = bounds.z_bounds(y) {
-                        for z in floatrange(
-                            (z_bounds.lower / grid_interval).round() * grid_interval,
-                            (z_bounds.upper / grid_interval).round() * grid_interval,
-                            grid_interval,
-                        ) {
-                            let z_index = ((z + 1.0) / 2.0 * 1000.0).round() as usize;
-                            let x = 1.0 - (y * y + z * z);
-                            let x = f64::max(0.0, x);
-                            let intensity = self.star.limb_brightness(x);
-                            let index = (z_index * 1000 + y_index) as usize;
-                            image[4 * index] = (intensity * 255.0) as u8;
-                            image[4 * index + 1] = (intensity * 157.0) as u8;
-                            image[4 * index + 2] = (intensity * 63.0) as u8;
-                            image[4 * index + 3] = 255;
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
-
-/*
-impl std::fmt::Debug for Simulation {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        use std::fmt::Write;
-        let mut message = String::new();
-        message.push_str("Star:\n");
-        write!(message, "    period: {} d\n", self.star.period)?;
-        write!(message, "    inclination: {} rad\n", self.star.inclination)?;
-        write!(message, "    temperature: {} K\n", self.star.temperature)?;
-        write!(
-            message,
-            "    spot_temp_diff: {} K\n",
-            self.star.spot_temp_diff
-        )?;
-        write!(message, "    limb_linear: {}\n", self.star.limb_linear)?;
-        write!(
-            message,
-            "    limb_quadratic: {}\n",
-            self.star.limb_quadratic
-        )?;
-        write!(message, "    grid_size: {}\n", self.star.grid_size)?;
-        message.push_str("Spots:\n");
-        for spot in &self.spots {
-            write!(message, "    latitude: {} rad\n", spot.latitude)?;
-            write!(message, "    longitude: {} rad\n", spot.longitude)?;
-            write!(message, "    radius: {}\n", spot.radius)?;
-            write!(message, "    temperature: {} K\n", spot.temperature)?;
-            write!(message, "    plage: {}\n", spot.plage)?;
-            write!(message, "    mortal: {}\n", spot.mortal)?;
-            message.push_str("----");
-        }
-        let new_len = message.len() - 5;
-        message.truncate(new_len);
-        f.write_str(message.as_str())
-    }
-}
-*/
 
 #[cfg(test)]
 mod tests {

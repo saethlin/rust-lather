@@ -5,11 +5,10 @@ use lather::{linspace, Simulation};
 fn main() {
     let mut sim = Simulation::new("sun.cfg");
 
-    let mut pix_image = sim.star.draw_rgba();
-    for time in linspace(6.0, 8.0, 30) {
+    for time in linspace(5.0, 25.0, 100) {
+        let mut pix_image = sim.star.draw_rgba();
         sim.draw_rgba(time, &mut pix_image);
         save_png(&pix_image, &format!("{:.2}.png", time));
-        sim.undraw_rgba(time, &mut pix_image);
     }
 }
 

@@ -1,5 +1,3 @@
-set up CI?
-speed up brute-force spot edge-finding
-
-let x: Vec<<Second<f64> as Div<Meter<f64>>>::Output> = vec![3. * si::f64consts::S / si::f64consts::M];
+Compile-time units checking
+FFT convolution for resolution correction
 
