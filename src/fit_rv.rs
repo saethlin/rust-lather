@@ -14,6 +14,7 @@ pub fn fit_rv(rv: &[f64], ccf: &[f64]) -> f64 {
         },
     );
 
+    // TODO: Allocation here is very silly, should be able to avoid it
     let peak_rv = rv.iter().skip(min_index - 3).take(7).cloned();
     let peak_ccf: Vec<f64> = ccf.iter().skip(min_index - 3).take(7).cloned().collect();
     let rv_matrix_values: Vec<f64> = std::iter::repeat(1.0)

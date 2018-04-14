@@ -89,7 +89,6 @@ impl Spot {
                 self.star
                     .profile_active
                     .shift_into(y * self.star.equatorial_velocity, &mut active_shifted);
-
                 if let Some(z_bounds) = bounds.z_bounds(y) {
                     let limb_integral = self.star.limb_integral(&z_bounds, y);
                     for (tot, qshift, ashift) in cons_tuples(

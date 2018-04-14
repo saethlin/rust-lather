@@ -1,5 +1,5 @@
-use std::iter;
-use std;
+#[cfg(feature = "simd")]
+use faster::*;
 
 /// A cross-correlation profile, which can be shifted by fast linear interpolation.
 #[derive(Debug)]
@@ -15,14 +15,36 @@ impl Profile {
     /// cross-correlation function, and computes the derivative to enable fast
     /// linear interpolation to simulate viewing the profile at different
     /// relative velocities.
+    #[cfg(feature = "simd")]
     pub fn new(rv: Vec<f64>, ccf: Vec<f64>) -> Self {
+        let mut der = vec![0.0; ccf.len()];
+        (
+            ccf[..ccf.len() - 1].simd_iter(f64s(0.0)),
+            ccf[1..].simd_iter(f64s(0.0)),
+            rv[..rv.len() - 1].simd_iter(f64s(0.0)),
+            rv[1..].simd_iter(f64s(0.0)),
+        ).zip()
+            .simd_map(|(cl, cr, rvl, rvr)| (cl - cr) / (rvl - rvr))
+            .scalar_fill(&mut der);
+
+        Profile {
+            rv: rv.clone(),
+            ccf: ccf.clone(),
+            derivative: der,
+            stepsize: (rv[0] - rv[1]).abs(),
+        }
+    }
+
+    #[cfg(not(feature = "simd"))]
+    pub fn new(rv: Vec<f64>, ccf: Vec<f64>) -> Self {
+        use std::iter;
         let ccf_diff = ccf.windows(2).map(|s| s[0] - s[1]);
         let rv_diff = rv.windows(2).map(|s| s[0] - s[1]);
 
         let der = ccf_diff
             .zip(rv_diff)
             .map(|(c, r)| c / r)
-            .chain(std::iter::once(0.0))
+            .chain(iter::once(0.0))
             .collect();
 
         Profile {
@@ -47,33 +69,42 @@ impl Profile {
     /// this profile's cross-correlation function by linear interpolation.
     /// The units of velocity must match those of the radial velocity used
     /// to construct this profile.
-    pub fn shift(&self, velocity: f64) -> Vec<f64> {
+    #[cfg(feature = "simd")]
+    pub fn shift_into(&self, velocity: f64, output: &mut [f64]) {
         let quotient = (velocity / self.stepsize).round() as isize;
         let remainder = velocity - (quotient as f64) * self.stepsize;
 
         if velocity >= 0.0 {
-            iter::repeat(self.ccf[0])
-                .take(quotient as usize)
-                .chain(
-                    self.ccf
-                        .iter()
-                        .zip(self.derivative.iter())
-                        .take(self.ccf.len() - quotient as usize)
-                        .map(|(ccf, der)| ccf - remainder * der),
-                )
-                .collect()
+            let quotient = quotient as usize;
+            for i in 0..quotient {
+                output[i] = 0.0;
+            }
+
+            (
+                self.ccf[..output.len() - quotient].simd_iter(f64s(0.0)),
+                self.derivative[..output.len() - quotient].simd_iter(f64s(0.0)),
+            ).zip()
+                .simd_map(|(ccf, der)| ccf - f64s(remainder) * der)
+                .scalar_fill(&mut output[quotient..]);
         } else {
-            self.ccf
-                .iter()
-                .zip(self.derivative.iter())
-                .skip((-quotient) as usize)
-                .map(|(ccf, der)| ccf - remainder * der)
-                .chain(iter::repeat(self.ccf[0]).take((-quotient) as usize))
-                .collect()
+            let quot = -quotient as usize;
+            let len = output.len();
+            (
+                self.ccf[quot..].simd_iter(f64s(0.0)),
+                self.derivative[quot..].simd_iter(f64s(0.0)),
+            ).zip()
+                .simd_map(|(ccf, der)| ccf - f64s(remainder) * der)
+                .scalar_fill(&mut output[..len - quot]);
+
+            for i in (output.len() - quot)..output.len() {
+                output[i] = 0.0;
+            }
         }
     }
 
+    #[cfg(not(feature = "simd"))]
     pub fn shift_into(&self, velocity: f64, output: &mut [f64]) {
+        use std::iter;
         let quotient = (velocity / self.stepsize).round() as isize;
         let remainder = velocity - (quotient as f64) * self.stepsize;
 
@@ -98,7 +129,7 @@ impl Profile {
                 .chain(iter::repeat(self.ccf[0]).take((-quotient) as usize))
                 .zip(output.iter_mut())
                 .for_each(|(shifted, output)| *output = shifted);
-        };
+        }
     }
 }
 

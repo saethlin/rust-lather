@@ -9,6 +9,8 @@
 extern crate cpython;
 #[macro_use]
 extern crate derivative;
+#[cfg(feature = "simd")]
+extern crate faster;
 extern crate ini;
 extern crate itertools;
 extern crate ndarray;

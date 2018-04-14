@@ -11,6 +11,9 @@ documentation = "https://docs.rs/lather/"
 keywords = ["astronomy"]
 categories = ["science", "simulation"]
 
+[features]
+simd = ["faster"]
+
 [dependencies]
 rand = "0.4"
 rust-ini = "0.10"
@@ -26,6 +29,7 @@ num-complex = "0.1"
 gnuplot = "0.0"
 rayon = "1.0"
 derivative = "1.0"
+faster = {git = "https://github.com/AdamNiederer/faster", optional = true}
 
 [dependencies.GSL]
 version = "0.4"

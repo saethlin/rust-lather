@@ -13,7 +13,7 @@ pub struct BoundingShape {
     circle_radius: f64,
     max_radius: f64,
     visible: bool,
-    on_edge: bool,
+    //on_edge: bool,
     grid_interval: f64,
 }
 
@@ -85,7 +85,7 @@ impl BoundingShape {
             circle_radius: circle_radius,
             max_radius: max_radius,
             visible: visible,
-            on_edge: x1 < grid_interval || x2 < grid_interval,
+            //on_edge: x1 < grid_interval || x2 < grid_interval,
             grid_interval: grid_interval,
         }
     }
@@ -166,6 +166,32 @@ impl BoundingShape {
         Some(Bounds::new(z2, z1))
         */
     }
+
+    /*
+    fn z_bounds_guess(&self, y: f64) -> Option<Bounds> {
+        let y_mod = (y - self.circle_center.y) / self.circle_radius;
+        let tmp = (self.a.y.powi(2) + self.b.y.powi(2) - y_mod.powi(2)).sqrt();
+        // TODO: When is this nan, and is that covered by another check?
+        if tmp.is_nan() {
+            return None;
+        }
+
+        let mut theta1 = 2.0 * (self.b.y + tmp).atan2(self.a.y + y_mod);
+        let mut theta2 = 2.0 * (self.b.y - tmp).atan2(self.a.y + y_mod);
+
+        if self.center.y < 0.0 {
+            theta1 += consts::PI;
+            theta2 += consts::PI;
+        }
+
+        let z1: f64 = self.circle_center.z
+            + self.circle_radius * (self.a.z * theta1.cos() + self.b.z * theta1.sin());
+        let z2: f64 = self.circle_center.z
+            + self.circle_radius * (self.a.z * theta2.cos() + self.b.z * theta2.sin());
+
+        Some(Bounds::new(z2, z1))
+    }
+    */
 
     fn z_bounds_edge(&self, y: f64) -> Option<Bounds> {
         use linspace::floatrange;
