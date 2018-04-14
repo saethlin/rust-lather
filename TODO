@@ -1,3 +1,4 @@
 Compile-time units checking
 FFT convolution for resolution correction
+Nice way to add spots, both from Rust and Python
 
