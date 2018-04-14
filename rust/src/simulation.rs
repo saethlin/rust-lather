@@ -1,7 +1,5 @@
 use std::iter;
 use std::sync::RwLock;
-use std::fmt::Write;
-use ini::Ini;
 use rand::distributions::{IndependentSample, LogNormal, Range};
 use std::sync::Arc;
 use planck::planck_integral;
@@ -9,8 +7,8 @@ use fit_rv::fit_rv;
 use compute_bisector::compute_bisector;
 use rayon::prelude::*;
 
-use star::Star;
-use spot::Spot;
+use star::{Star, StarConfig};
+use spot::{Spot, SpotConfig};
 
 /// An observed radial velocity and line bisector.
 pub struct Observation {
@@ -28,95 +26,108 @@ pub struct Simulation {
     pub star: Arc<Star>,
     #[doc(hidden)]
     pub spots: Vec<Spot>,
-    dynamic_fill_factor: f64,
     #[derivative(Debug = "ignore")]
     generator: Arc<RwLock<::rand::StdRng>>,
 }
 
-macro_rules! get {
-(&mut $error:ident, $file:ident, $filename:ident, $section:expr, $field:expr, $type:ty) => (
-    { let default_string = "1.0".to_owned();
-    $file.section(Some($section)).unwrap().get($field)
-        .unwrap_or_else(|| {
-            writeln!(
-                $error,
-                "Missing field {} of section {} in config file {}",
-                $field,
-                $section,
-                $filename).unwrap();
-            &default_string
-        })
-        .parse::<$type>()
-        .unwrap_or_else(|_| {
-            writeln!(
-                $error,
-                "Cannot parse field {} of section {} in config file {}",
-                $field,
-                $section,
-                $filename).unwrap();
-            <$type as Default>::default()
-        })
+#[derive(Deserialize, Serialize)]
+struct Config {
+    star: StarConfig,
+    spots: Option<Vec<SpotConfig>>,
+}
+impl Config {
+    fn example() -> Config {
+        Config {
+            star: StarConfig {
+                grid_size: 1000,
+                radius: 1.0,
+                period: 25.05,
+                inclination: 90.0,
+                temperature: 5778.0,
+                spot_temp_diff: 663.0,
+                limb_linear: 0.29,
+                limb_quadratic: 0.34,
+                minimum_fill_factor: 0.00,
+            },
+            spots: Some(vec![
+                SpotConfig {
+                    latitude: 30.0,
+                    longitude: 180.0,
+                    fill_factor: 0.01,
+                    plage: false,
+                },
+                SpotConfig {
+                    latitude: 30.0,
+                    longitude: 180.0,
+                    fill_factor: 0.01,
+                    plage: false,
+                },
+            ]),
+        }
     }
-)
 }
 
 impl Simulation {
-    /// Construct a new Star from a config file.
-    pub fn new(filename: &str) -> Simulation {
-        let mut error = String::new();
-        let file = Ini::load_from_file(filename)
-            .expect(&format!("Could not open config file {}", filename));
-
-        file.section(Some("star")).expect(&format!(
-            "Missing section start in config file {}",
-            filename
-        ));
-
-        let radius = get!(&mut error, file, filename, "star", "radius", f64);
-        let period = get!(&mut error, file, filename, "star", "period", f64);
-        let inclination = get!(&mut error, file, filename, "star", "inclination", f64);
-        let temperature = get!(&mut error, file, filename, "star", "Tstar", f64);
-        let spot_temp_diff = get!(&mut error, file, filename, "star", "Tdiff_spot", f64);
-        let limb_linear = get!(&mut error, file, filename, "star", "limb1", f64);
-        let limb_quadratic = get!(&mut error, file, filename, "star", "limb2", f64);
-        let dynamic_fill_factor = get!(&mut error, file, filename, "star", "fillfactor", f64);
-        let grid_size = get!(&mut error, file, filename, "star", "grid_resolution", usize);
-
-        let star = Arc::new(Star::new(
-            radius,
-            period,
-            inclination,
-            temperature,
-            spot_temp_diff,
-            limb_linear,
-            limb_quadratic,
-            grid_size,
-        ));
-
-        let spots: Vec<Spot> = file.iter()
-            .filter(|&(s, _)| s.to_owned().is_some())
-            .filter(|&(s, _)| s.to_owned().unwrap().as_str().starts_with("spot"))
-            .map(|(section, _)| {
-                let sec = section.clone().unwrap();
-                let latitude = get!(&mut error, file, filename, sec.as_str(), "latitude", f64);
-                let longitude = get!(&mut error, file, filename, sec.as_str(), "longitude", f64);
-                let size = get!(&mut error, file, filename, sec.as_str(), "size", f64);
-                let plage = get!(&mut error, file, filename, sec.as_str(), "plage", bool);
-
-                Spot::new(star.clone(), latitude, longitude, size, plage, false)
-            })
-            .collect();
-
-        if !error.is_empty() {
-            panic!("One or more errors loading config file");
-        }
-
+    /// Construct the simulation used in tests
+    pub fn sun() -> Simulation {
         Simulation {
-            star: star,
-            spots: spots,
-            dynamic_fill_factor: dynamic_fill_factor,
+            star: Arc::new(Star::from_config(&StarConfig {
+                grid_size: 1000,
+                radius: 1.0,
+                period: 25.05,
+                inclination: 90.0,
+                temperature: 5778.0,
+                spot_temp_diff: 663.0,
+                limb_linear: 0.29,
+                limb_quadratic: 0.34,
+                minimum_fill_factor: 0.00,
+            })),
+            spots: Vec::new(),
             generator: Arc::new(RwLock::new(::rand::StdRng::new().unwrap())),
         }
+    }
+
+    /// Construct a new Star from a TOML file.
+    pub fn from_config(config_path: &str) -> Simulation {
+        use std::fs::File;
+        use std::io::Read;
+
+        let mut contents = String::new();
+        File::open(&config_path)
+            .unwrap_or_else(|_| {
+                panic!(
+                    "Tried to open a config file at {:?}, but it doesn't seem to exist",
+                    config_path
+                );
+            })
+            .read_to_string(&mut contents)
+            .unwrap_or_else(|_| {
+                panic!("Unable to read config file at {:?}", &config_path);
+            });
+
+        let config: Config = ::toml::from_str(&contents).unwrap_or_else(|_| {
+            println!(
+                "{:?} is not a valid config file. Here's an example:\n",
+                &config_path
+            );
+            println!("{}", ::toml::to_string_pretty(&Config::example()).unwrap());
+            panic!();
+        });
+
+        let mut sim = Simulation {
+            star: Arc::new(Star::from_config(&config.star)),
+            spots: Vec::new(),
+            generator: Arc::new(RwLock::new(::rand::StdRng::new().unwrap())),
+        };
+
+        if let Some(spot_configs) = config.spots {
+            for spot_config in spot_configs {
+                sim.spots
+                    .push(Spot::from_config(Arc::clone(&sim.star), &spot_config));
+            }
+        }
+
+        sim
     }
 
     fn check_fill_factor(&mut self, time: f64) {
@@ -130,12 +141,12 @@ impl Simulation {
         let lat_range = Range::new(-30.0, 30.0);
         let long_range = Range::new(0.0, 360.0);
 
-        if current_fill_factor < self.dynamic_fill_factor {
+        if current_fill_factor < self.star.minimum_fill_factor {
             let mut generator = self.generator
                 .write()
                 .expect("Simulation RNG lock was poisoned by another panic");
 
-            while current_fill_factor < self.dynamic_fill_factor {
+            while current_fill_factor < self.star.minimum_fill_factor {
                 let new_fill_factor = iter::repeat(())
                     .map(|_| fill_range.ind_sample(&mut *generator) * 9.4e-6)
                     .find(|v| *v < 0.001)
@@ -300,8 +311,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn load_config() {
-        let sim = Simulation::new("sun.cfg");
-        assert_eq!(sim.dynamic_fill_factor, 0.0);
+    fn example_config_is_valid() {
+        Simulation::from_config("../examples/sun.toml");
     }
 }

@@ -4,12 +4,10 @@
 //! This project was inspired by a desire to improve upon the
 //! starspot modeling library named SOAP.
 
-#![deny(missing_docs)]
 #[macro_use]
 extern crate derivative;
 #[cfg(feature = "simd")]
 extern crate faster;
-extern crate ini;
 extern crate itertools;
 extern crate ndarray;
 extern crate num_complex;
@@ -19,10 +17,15 @@ extern crate rayon;
 extern crate rgsl;
 extern crate rulinalg;
 extern crate rustfft;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate toml;
 
 mod simulation;
 pub use simulation::Simulation;
 pub use simulation::Observation;
+pub use spot::{Spot, SpotConfig};
 
 mod linspace;
 pub use linspace::{floatrange, linspace};
@@ -45,7 +48,9 @@ use std::os::raw::c_char;
 /// Build a simulation from a path to a config file
 #[no_mangle]
 pub unsafe extern "C" fn simulation_new(filename: *const c_char) -> *mut Simulation {
-    let mut obj = Box::new(Simulation::new(CStr::from_ptr(filename).to_str().unwrap()));
+    let mut obj = Box::new(Simulation::from_config(
+        CStr::from_ptr(filename).to_str().unwrap(),
+    ));
 
     let ptr: *mut _ = &mut *obj;
 

@@ -6,6 +6,14 @@ use star::Star;
 use boundingshape::BoundingShape;
 use linspace::floatrange;
 
+#[derive(Deserialize, Serialize)]
+pub struct SpotConfig {
+    pub latitude: f64,
+    pub longitude: f64,
+    pub fill_factor: f64,
+    pub plage: bool,
+}
+
 /// A circular starspot
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -44,6 +52,22 @@ impl Spot {
             temperature: temperature,
             plage: plage,
             mortal: mortal,
+            time_appear: 0.0,
+            time_disappear: 15.0,
+            intensity: 0.0,
+        }
+    }
+
+    pub fn from_config(star: Arc<Star>, config: &SpotConfig) -> Spot {
+        let temperature = star.temperature - star.spot_temp_diff;
+        Spot {
+            star: star,
+            latitude: config.latitude * consts::PI / 180.0,
+            longitude: config.longitude * consts::PI / 180.0,
+            radius: (2.0 * config.fill_factor).sqrt(),
+            temperature: temperature,
+            plage: config.plage,
+            mortal: false,
             time_appear: 0.0,
             time_disappear: 15.0,
             intensity: 0.0,

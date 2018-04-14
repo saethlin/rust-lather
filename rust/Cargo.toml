@@ -17,11 +17,10 @@ simd = ["faster"]
 
 [dependencies]
 rand = "0.4"
-rust-ini = "0.10"
 itertools = "0.7"
 quadrature = "0.1"
 rulinalg = "0.4"
-ndarray = "0.9" # Held back by numpy
+ndarray = "0.11"
 bencher = "0.1"
 png = "0.11"
 rustfft = "2.0"
@@ -30,6 +29,9 @@ gnuplot = "0.0"
 rayon = "1.0"
 derivative = "1.0"
 faster = {git = "https://github.com/AdamNiederer/faster", optional = true}
+serde = "1.0"
+serde_derive = "1.0"
+toml = "0.4"
 
 [dependencies.GSL]
 version = "0.4"

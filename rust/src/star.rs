@@ -11,6 +11,19 @@ use rayon::prelude::*;
 static SOLAR_RADIUS: f64 = 6.96e8;
 static DAYS_TO_SECONDS: f64 = 86400.0;
 
+#[derive(Deserialize, Serialize)]
+pub struct StarConfig {
+    pub grid_size: usize,
+    pub radius: f64,
+    pub period: f64,
+    pub inclination: f64,
+    pub temperature: f64,
+    pub spot_temp_diff: f64,
+    pub limb_linear: f64,
+    pub limb_quadratic: f64,
+    pub minimum_fill_factor: f64,
+}
+
 /// A star that can host spots
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -25,6 +38,7 @@ pub struct Star {
     pub flux_quiet: f64,
     pub zero_rv: f64,
     pub equatorial_velocity: f64,
+    pub minimum_fill_factor: f64,
     #[derivative(Debug = "ignore")]
     pub integrated_ccf: Vec<f64>,
     #[derivative(Debug = "ignore")]
@@ -34,6 +48,56 @@ pub struct Star {
 }
 
 impl Star {
+    pub fn from_config(config: &StarConfig) -> Star {
+        let sqrt = f64::sqrt;
+
+        let edge_velocity =
+            (2.0 * consts::PI * config.radius * SOLAR_RADIUS) / (config.period * DAYS_TO_SECONDS);
+        let equatorial_velocity = edge_velocity * (config.inclination * consts::PI / 180.0).sin();
+
+        let profile_quiet = Profile::new(rv(), ccf_quiet());
+        let profile_active = Profile::new(rv(), ccf_active());
+
+        let mut integrated_ccf = vec![0.0; ccf_quiet().len()];
+        let mut flux_quiet = 0.0;
+
+        let mut ccf_shifted = vec![0.0; profile_quiet.len()];
+        for y in linspace(-1.0, 1.0, config.grid_size) {
+            profile_quiet.shift_into(y * equatorial_velocity, &mut ccf_shifted);
+            let z_bound = sqrt(1.0 - y.powi(2));
+            if z_bound < std::f64::EPSILON {
+                continue;
+            }
+            let limb_integral = limb_integral(
+                &Bounds::new(-z_bound, z_bound),
+                y,
+                config.limb_linear,
+                config.limb_quadratic,
+            );
+            for (tot, shifted) in integrated_ccf.iter_mut().zip(ccf_shifted.iter()) {
+                *tot += *shifted * limb_integral;
+            }
+            flux_quiet += limb_integral;
+        }
+
+        Star {
+            period: config.period,
+            inclination: config.inclination * consts::PI / 180.0,
+            temperature: config.temperature,
+            spot_temp_diff: config.spot_temp_diff,
+            limb_linear: config.limb_linear,
+            limb_quadratic: config.limb_quadratic,
+            grid_size: config.grid_size,
+            flux_quiet: flux_quiet,
+            zero_rv: fit_rv(&rv(), &integrated_ccf),
+            equatorial_velocity: equatorial_velocity,
+            minimum_fill_factor: config.minimum_fill_factor,
+            integrated_ccf: integrated_ccf,
+            profile_active: profile_active,
+            profile_quiet: profile_quiet,
+        }
+    }
+
     pub fn new(
         radius: f64,
         period: f64,
@@ -42,6 +106,7 @@ impl Star {
         spot_temp_diff: f64,
         limb_linear: f64,
         limb_quadratic: f64,
+        minimum_fill_factor: f64,
         grid_size: usize,
     ) -> Self {
         let sqrt = f64::sqrt;
@@ -85,6 +150,7 @@ impl Star {
             flux_quiet: flux_quiet,
             zero_rv: fit_rv(&rv(), &integrated_ccf),
             equatorial_velocity: equatorial_velocity,
+            minimum_fill_factor: minimum_fill_factor,
             integrated_ccf: integrated_ccf,
             profile_active: profile_active,
             profile_quiet: profile_quiet,
@@ -125,26 +191,6 @@ impl Star {
             .flat_map(|c| c.iter().cloned())
             .collect::<Vec<u8>>()
     }
-
-    /*
-    pub fn draw_rgba(&self, image: &mut Vec<u8>) {
-        image.clear();
-        for y in linspace(-1.0, 1.0, 1000) {
-            for z in linspace(1.0, -1.0, 1000) {
-                let intensity = if (y.powi(2) + z.powi(2)) <= 1.0 {
-                    let x = f64::max(0.0, 1.0 - (z.powi(2) + y.powi(2)));
-                    self.limb_brightness(x)
-                } else {
-                    0.0
-                };
-                image.push((intensity * 255.) as u8);
-                image.push((intensity * 157.) as u8);
-                image.push((intensity * 63.) as u8);
-                image.push(255);
-            }
-        }
-    }
-    */
 }
 
 pub fn min(a: f64, b: f64) -> f64 {
