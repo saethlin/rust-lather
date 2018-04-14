@@ -7,7 +7,6 @@ fn main() {
     let mut config: cbindgen::Config = Default::default();
     config.language = cbindgen::Language::C;
     cbindgen::generate_with_config(&crate_dir, config)
-      .unwrap()
-      .write_to_file("target/lather.h");
+        .unwrap()
+        .write_to_file("target/lather.h");
 }
-
