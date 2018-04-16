@@ -23,23 +23,23 @@ extern crate serde_derive;
 extern crate toml;
 
 mod simulation;
-pub use simulation::Simulation;
 pub use simulation::Observation;
+pub use simulation::Simulation;
 pub use spot::{Spot, SpotConfig};
 
 mod linspace;
 pub use linspace::{floatrange, linspace};
 
-mod resolution;
-mod bounds;
 mod boundingshape;
-mod point;
+mod bounds;
+mod compute_bisector;
 mod fit_rv;
 mod planck;
-mod compute_bisector;
-mod star;
-mod spot;
+mod point;
 mod profile;
+mod resolution;
+mod spot;
+mod star;
 mod sun_ccfs;
 
 use std::ffi::{CStr, CString};
@@ -80,7 +80,7 @@ pub unsafe extern "C" fn simulation_free(sim: *mut Simulation) {
 pub unsafe extern "C" fn simulation_tostring(sim: *mut Simulation) -> *const c_char {
     use std::fmt::Write;
     if sim.is_null() {
-        return 0 as *const c_char;
+        return std::ptr::null();
     }
 
     let mut output = String::new();
@@ -101,7 +101,7 @@ pub unsafe extern "C" fn simulation_observe_flux(
     wave_end: f64,
 ) -> *const f64 {
     if sim.is_null() {
-        return 0 as *const f64;
+        return std::ptr::null();
     }
     let time_slice = std::slice::from_raw_parts(times, n_times);
     let output = (*sim).observe_flux(time_slice, wave_start, wave_end);
@@ -120,7 +120,7 @@ pub unsafe extern "C" fn simulation_observe_rv(
     wave_end: f64,
 ) -> *const f64 {
     if sim.is_null() {
-        return 0 as *const f64;
+        return std::ptr::null();
     }
 
     let time_slice = std::slice::from_raw_parts(times, n_times);

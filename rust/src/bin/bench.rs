@@ -41,10 +41,5 @@ fn observe_rv(b: &mut Bencher) {
     b.iter(|| sim.observe_rv(&time, 4000e-10, 5000e-10));
 }
 
-benchmark_group!(
-    benches,
-    load_config,
-    observe_flux,
-    observe_rv,
-);
+benchmark_group!(benches, load_config, observe_flux, observe_rv,);
 benchmark_main!(benches);

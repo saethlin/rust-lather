@@ -1,8 +1,8 @@
 use std::f64::consts;
 
+use bounds::Bounds;
 use point::Point;
 use spot::Spot;
-use bounds::Bounds;
 
 pub struct BoundingShape {
     center: Point,
@@ -124,6 +124,10 @@ impl BoundingShape {
     }
 
     pub fn z_bounds(&self, y: f64, guess: &mut Option<Bounds>) -> Option<Bounds> {
+        if y.abs() >= 1.0 {
+            return None;
+        }
+
         let new_bounds = match guess {
             &mut Some(ref the_guess) => self.z_bounds_ansatz(y, &the_guess),
             &mut None => self.z_bounds_brute(y),
@@ -178,10 +182,6 @@ impl BoundingShape {
 
     fn z_bounds_brute(&self, y: f64) -> Option<Bounds> {
         use linspace::floatrange;
-
-        if y == -1.0 {
-            return None;
-        }
 
         let z_max = floatrange(
             self.center.z + self.radius,

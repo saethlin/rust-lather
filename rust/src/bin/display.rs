@@ -32,10 +32,10 @@ fn main() {
 }
 
 fn save_png(image: &[u8], filename: &str) {
-    use std::path::Path;
+    use png::HasParameters;
     use std::fs::File;
     use std::io::BufWriter;
-    use png::HasParameters;
+    use std::path::Path;
 
     let path = Path::new(filename);
     let file = File::create(path).unwrap();

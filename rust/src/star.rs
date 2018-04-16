@@ -1,12 +1,12 @@
-use std::f64::consts;
 use std;
+use std::f64::consts;
 
-use profile::Profile;
 use bounds::Bounds;
-use sun_ccfs::*;
 use fit_rv::fit_rv;
 use linspace::linspace;
+use profile::Profile;
 use rayon::prelude::*;
+use sun_ccfs::*;
 
 static SOLAR_RADIUS: f64 = 6.96e8;
 static DAYS_TO_SECONDS: f64 = 86400.0;
@@ -210,17 +210,16 @@ pub fn limb_integral(z_bounds: &Bounds, y: f64, limb_linear: f64, limb_quadratic
     1. / 6.
         * (z_upper
             * (3.0 * limb_linear * (x_upper - 2.0)
-                + 2.0
-                    * (limb_quadratic * (3.0 * x_upper + 3.0 * y * y + z_upper * z_upper - 6.0)
-                        + 3.0))
+                + 2.0 * (limb_quadratic * (3.0 * x_upper + 3.0 * y * y + z_upper * z_upper - 6.0)
+                    + 3.0))
             - 3.0 * (y * y - 1.0) * (limb_linear + 2.0 * limb_quadratic)
                 * (z_upper / x_upper).atan())
         - 1. / 6.
             * (z_lower
                 * (3.0 * limb_linear * (x_lower - 2.0)
-                    + 2.0
-                        * (limb_quadratic * (3.0 * x_lower + 3.0 * y * y + z_lower * z_lower - 6.0)
-                            + 3.0))
+                    + 2.0 * (limb_quadratic
+                        * (3.0 * x_lower + 3.0 * y * y + z_lower * z_lower - 6.0)
+                        + 3.0))
                 - 3.0 * (y * y - 1.0) * (limb_linear + 2.0 * limb_quadratic)
                     * (z_lower / x_lower).atan())
 }

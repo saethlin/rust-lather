@@ -1,14 +1,14 @@
-use std::iter;
-use std::sync::RwLock;
-use rand::distributions::{IndependentSample, LogNormal, Range};
-use std::sync::Arc;
-use planck::planck_integral;
-use fit_rv::fit_rv;
 use compute_bisector::compute_bisector;
+use fit_rv::fit_rv;
+use planck::planck_integral;
+use rand::distributions::{IndependentSample, LogNormal, Range};
 use rayon::prelude::*;
+use std::iter;
+use std::sync::Arc;
+use std::sync::RwLock;
 
-use star::{Star, StarConfig};
 use spot::{Spot, SpotConfig};
+use star::{Star, StarConfig};
 
 /// An observed radial velocity and line bisector.
 pub struct Observation {

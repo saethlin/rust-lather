@@ -1,10 +1,10 @@
+use itertools::cons_tuples;
 use std::f64::consts;
 use std::sync::Arc;
-use itertools::cons_tuples;
 
-use star::Star;
 use boundingshape::BoundingShape;
 use linspace::floatrange;
+use star::Star;
 
 #[derive(Deserialize, Serialize)]
 pub struct SpotConfig {

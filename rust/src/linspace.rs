@@ -16,6 +16,16 @@ impl Iterator for Linspace {
             output
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.index, Some(self.len - self.index))
+    }
+}
+
+impl ExactSizeIterator for Linspace {
+    fn len(&self) -> usize {
+        self.len
+    }
 }
 
 /// Creates an iterator of `len` floats between `start`
@@ -47,16 +57,22 @@ impl Iterator for Floatrange {
             output
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.index, Some(self.len - self.index))
+    }
+}
+
+impl ExactSizeIterator for Floatrange {
+    fn len(&self) -> usize {
+        self.len
+    }
 }
 
 /// Creates an iterator of floats that begin at `start` and
 /// increase by `step` until they would exceed `stop`.
 pub fn floatrange(start: f64, stop: f64, step: f64) -> Floatrange {
-    let len = if start == stop {
-        0
-    } else {
-        ((stop - start) / step) as usize
-    };
+    let len = ((stop - start) / step) as usize;
     Floatrange {
         index: 0,
         len: len,

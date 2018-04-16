@@ -1,5 +1,5 @@
-use rulinalg::matrix::Matrix;
 use rulinalg::matrix::BaseMatrix;
+use rulinalg::matrix::Matrix;
 use std;
 
 pub fn fit_rv(rv: &[f64], ccf: &[f64]) -> f64 {
