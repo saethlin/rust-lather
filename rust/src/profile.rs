@@ -17,7 +17,7 @@ impl Profile {
     /// relative velocities.
     #[cfg(feature = "simd")]
     pub fn new(rv: Vec<f64>, ccf: Vec<f64>) -> Self {
-        let mut der = vec![0.0; ccf.len()];
+        let mut derivative = vec![0.0; ccf.len()];
         (
             ccf[..ccf.len() - 1].simd_iter(f64s(0.0)),
             ccf[1..].simd_iter(f64s(0.0)),
@@ -25,33 +25,40 @@ impl Profile {
             rv[1..].simd_iter(f64s(0.0)),
         ).zip()
             .simd_map(|(cl, cr, rvl, rvr)| (cl - cr) / (rvl - rvr))
-            .scalar_fill(&mut der);
+            .scalar_fill(&mut derivative);
+
+        let stepsize = (rv[0] - rv[1]).abs();
 
         Profile {
-            rv: rv.clone(),
-            ccf: ccf.clone(),
-            derivative: der,
-            stepsize: (rv[0] - rv[1]).abs(),
+            rv,
+            ccf,
+            derivative,
+            stepsize,
         }
     }
 
     #[cfg(not(feature = "simd"))]
     pub fn new(rv: Vec<f64>, ccf: Vec<f64>) -> Self {
         use std::iter;
-        let ccf_diff = ccf.windows(2).map(|s| s[0] - s[1]);
-        let rv_diff = rv.windows(2).map(|s| s[0] - s[1]);
 
-        let der = ccf_diff
-            .zip(rv_diff)
-            .map(|(c, r)| c / r)
-            .chain(iter::once(0.0))
-            .collect();
+        let derivative = {
+            let ccf_diff = ccf.windows(2).map(|s| s[0] - s[1]);
+            let rv_diff = rv.windows(2).map(|s| s[0] - s[1]);
+
+            ccf_diff
+                .zip(rv_diff)
+                .map(|(c, r)| c / r)
+                .chain(iter::once(0.0))
+                .collect()
+        };
+
+        let stepsize = (rv[0] - rv[1]).abs();
 
         Profile {
-            rv: rv.clone(),
-            ccf: ccf.clone(),
-            derivative: der,
-            stepsize: (rv[0] - rv[1]).abs(),
+            rv,
+            ccf,
+            derivative,
+            stepsize,
         }
     }
 
