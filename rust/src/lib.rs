@@ -22,6 +22,9 @@ extern crate serde;
 extern crate serde_derive;
 extern crate toml;
 
+#[macro_use]
+mod solar_ccfs;
+
 mod simulation;
 pub use simulation::Observation;
 pub use simulation::Simulation;
@@ -40,7 +43,6 @@ mod profile;
 mod resolution;
 mod spot;
 mod star;
-mod sun_ccfs;
 
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;

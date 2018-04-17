@@ -136,26 +136,25 @@ impl Profile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sun_ccfs::*;
 
     #[test]
     fn derivative_len() {
-        let test_profile = Profile::new(rv(), ccf_quiet());
+        let test_profile = Profile::new(rv!(), ccf_quiet!());
         assert_eq!(
             test_profile.derivative.len(),
-            ccf_quiet().len(),
+            ccf_quiet!().len(),
             "derivative length is {} but should be {}",
             test_profile.derivative.len(),
-            ccf_quiet().len()
+            ccf_quiet!().len()
         );
     }
 
     #[test]
     fn pos_zero_shift() {
-        let test_profile = Profile::new(rv(), ccf_quiet());
+        let test_profile = Profile::new(rv!(), ccf_quiet!());
         let mut shifted = vec![0.0; test_profile.len()];
         test_profile.shift_into(0.0, &mut shifted);
-        for (original, shifted) in ccf_quiet().iter().zip(shifted.iter()) {
+        for (original, shifted) in ccf_quiet!().iter().zip(shifted.iter()) {
             assert_eq!(
                 original, shifted,
                 "zero-shifted profile value is {} but should be {}",
@@ -166,10 +165,10 @@ mod tests {
 
     #[test]
     fn neg_zero_shift() {
-        let test_profile = Profile::new(rv(), ccf_quiet());
+        let test_profile = Profile::new(rv!(), ccf_quiet!());
         let mut shifted = vec![0.0; test_profile.len()];
         test_profile.shift_into(-0.0, &mut shifted);
-        for (original, shifted) in ccf_quiet().iter().zip(shifted.iter()) {
+        for (original, shifted) in ccf_quiet!().iter().zip(shifted.iter()) {
             assert_eq!(
                 original, shifted,
                 "negative zero-shifted profile value is {} but should be {}",

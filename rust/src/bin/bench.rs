@@ -18,6 +18,7 @@ fn observe_flux(b: &mut Bencher) {
             longitude: 180.0,
             fill_factor: 0.01,
             plage: false,
+            mortal: false,
         },
     ));
     let time: Vec<f64> = linspace(0.0, 25.05, 100).collect();
@@ -34,6 +35,7 @@ fn observe_rv(b: &mut Bencher) {
             longitude: 180.0,
             fill_factor: 0.01,
             plage: false,
+            mortal: false,
         },
     ));
     let time: Vec<f64> = linspace(0.0, 25.05, 100).collect();

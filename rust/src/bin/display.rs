@@ -12,6 +12,7 @@ fn main() {
             longitude: 180.0,
             fill_factor: 0.01,
             plage: false,
+            mortal: false,
         },
     ));
     sim.spots.push(Spot::from_config(
@@ -21,6 +22,7 @@ fn main() {
             longitude: 180.0,
             fill_factor: 0.01,
             plage: false,
+            mortal: false,
         },
     ));
 

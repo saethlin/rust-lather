@@ -12,6 +12,8 @@ pub struct SpotConfig {
     pub longitude: f64,
     pub fill_factor: f64,
     pub plage: bool,
+    #[serde(skip)]
+    pub mortal: bool,
 }
 
 /// A circular starspot
@@ -35,37 +37,14 @@ impl Spot {
     /// Create a new spot on `star` and at the coordinates specified, where
     /// latitude is 0 at the equator and both latitude and longitude are
     /// measured in degrees.
-    pub fn new(
-        star: Arc<Star>,
-        latitude: f64,
-        longitude: f64,
-        fillfactor: f64,
-        plage: bool,
-        mortal: bool,
-    ) -> Self {
-        let temperature = star.temperature - star.spot_temp_diff;
-        Spot {
-            star: star,
-            latitude: latitude * consts::PI / 180.0,
-            longitude: longitude * consts::PI / 180.0,
-            radius: (2.0 * fillfactor).sqrt(),
-            temperature: temperature,
-            plage: plage,
-            mortal: mortal,
-            time_appear: 0.0,
-            time_disappear: 15.0,
-            intensity: 0.0,
-        }
-    }
-
     pub fn from_config(star: Arc<Star>, config: &SpotConfig) -> Spot {
         let temperature = star.temperature - star.spot_temp_diff;
         Spot {
-            star: star,
+            star,
             latitude: config.latitude * consts::PI / 180.0,
             longitude: config.longitude * consts::PI / 180.0,
             radius: (2.0 * config.fill_factor).sqrt(),
-            temperature: temperature,
+            temperature,
             plage: config.plage,
             mortal: false,
             time_appear: 0.0,
@@ -99,9 +78,9 @@ impl Spot {
     }
 
     pub fn get_ccf(&self, time: f64) -> Vec<f64> {
-        let mut profile = vec![0.0; self.star.profile_active.len()];
-        let mut quiet_shifted = vec![0.0; self.star.profile_active.len()];
-        let mut active_shifted = vec![0.0; self.star.profile_quiet.len()];
+        let mut profile = vec![0.0; self.star.profile_spot.len()];
+        let mut quiet_shifted = vec![0.0; self.star.profile_quiet.len()];
+        let mut active_shifted = vec![0.0; self.star.profile_spot.len()];
         let bounds = BoundingShape::new(self, time);
         let mut current_z_bounds = None;
         if let Some(y_bounds) = bounds.y_bounds() {
@@ -114,7 +93,7 @@ impl Spot {
                     .profile_quiet
                     .shift_into(y * self.star.equatorial_velocity, &mut quiet_shifted);
                 self.star
-                    .profile_active
+                    .profile_spot
                     .shift_into(y * self.star.equatorial_velocity, &mut active_shifted);
 
                 if let Some(z_bounds) = bounds.z_bounds(y, &mut current_z_bounds) {

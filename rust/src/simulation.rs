@@ -55,12 +55,14 @@ impl Config {
                     longitude: 180.0,
                     fill_factor: 0.01,
                     plage: false,
+                    mortal: false,
                 },
                 SpotConfig {
                     latitude: 30.0,
                     longitude: 180.0,
                     fill_factor: 0.01,
                     plage: false,
+                    mortal: false,
                 },
             ]),
         }
@@ -152,13 +154,15 @@ impl Simulation {
                     .find(|v| *v < 0.001)
                     .unwrap();
 
-                let mut new_spot = Spot::new(
+                let mut new_spot = Spot::from_config(
                     self.star.clone(),
-                    lat_range.ind_sample(&mut *generator),
-                    long_range.ind_sample(&mut *generator),
-                    new_fill_factor,
-                    false,
-                    true,
+                    &SpotConfig {
+                        latitude: lat_range.ind_sample(&mut *generator),
+                        longitude: long_range.ind_sample(&mut *generator),
+                        fill_factor: new_fill_factor,
+                        plage: false,
+                        mortal: true,
+                    },
                 );
                 new_spot.time_appear += time;
                 new_spot.time_disappear += time;
@@ -221,7 +225,7 @@ impl Simulation {
 
         time.par_iter()
             .map(|t| {
-                let mut spot_profile = vec![0.0; self.star.profile_active.len()];
+                let mut spot_profile = vec![0.0; self.star.profile_spot.len()];
                 for spot in self.spots.iter().filter(|s| s.alive(*t)) {
                     let profile = spot.get_ccf(*t);
                     for (total, this) in spot_profile.iter_mut().zip(profile.iter()) {
@@ -235,7 +239,7 @@ impl Simulation {
 
                 /*
                 use resolution::set_resolution;
-                let spot_profile = set_resolution(&self.star.profile_active.rv, &spot_profile);
+                let spot_profile = set_resolution(&self.star.profile_spot.rv, &spot_profile);
                 println!("{:?}", spot_profile);
                 panic!();
                 */
