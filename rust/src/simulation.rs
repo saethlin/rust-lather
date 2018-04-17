@@ -7,6 +7,7 @@ use std::iter;
 use std::sync::Arc;
 use std::sync::RwLock;
 
+use bounds::Bounds;
 use spot::{Spot, SpotConfig};
 use star::{Star, StarConfig};
 
@@ -22,10 +23,8 @@ pub struct Observation {
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Simulation {
-    #[doc(hidden)]
-    pub star: Arc<Star>,
-    #[doc(hidden)]
-    pub spots: Vec<Spot>,
+    star: Arc<Star>,
+    spots: Vec<Spot>,
     #[derivative(Debug = "ignore")]
     generator: Arc<RwLock<::rand::StdRng>>,
 }
@@ -35,6 +34,7 @@ struct Config {
     star: StarConfig,
     spots: Option<Vec<SpotConfig>>,
 }
+
 impl Config {
     fn example() -> Config {
         Config {
@@ -132,6 +132,11 @@ impl Simulation {
         sim
     }
 
+    pub fn add_spot(&mut self, config: &SpotConfig) {
+        self.spots
+            .push(Spot::from_config(Arc::clone(&self.star), config));
+    }
+
     fn check_fill_factor(&mut self, time: f64) {
         let mut current_fill_factor = self.spots
             .iter()
@@ -185,13 +190,12 @@ impl Simulation {
     pub fn observe_flux(
         &mut self,
         time: &[f64],
-        wavelength_min: f64,
-        wavelength_max: f64,
+        wavelength: Bounds,
     ) -> Vec<f64> {
-        let star_intensity = planck_integral(self.star.temperature, wavelength_min, wavelength_max);
+        let star_intensity = planck_integral(self.star.temperature, wavelength.lower, wavelength.upper);
         for spot in &mut self.spots {
             spot.intensity =
-                planck_integral(spot.temperature, wavelength_min, wavelength_max) / star_intensity;
+                planck_integral(spot.temperature, wavelength.lower, wavelength.upper) / star_intensity;
         }
         for t in time.iter() {
             self.check_fill_factor(*t);
@@ -210,13 +214,12 @@ impl Simulation {
     pub fn observe_rv(
         &mut self,
         time: &[f64],
-        wavelength_min: f64,
-        wavelength_max: f64,
+        wavelength: Bounds,
     ) -> Vec<Observation> {
-        let star_intensity = planck_integral(self.star.temperature, wavelength_min, wavelength_max);
+        let star_intensity = planck_integral(self.star.temperature, wavelength.lower, wavelength.upper);
         for spot in &mut self.spots {
             spot.intensity =
-                planck_integral(spot.temperature, wavelength_min, wavelength_max) / star_intensity;
+                planck_integral(spot.temperature, wavelength.lower, wavelength.upper) / star_intensity;
         }
 
         for t in time.iter() {
@@ -255,8 +258,8 @@ impl Simulation {
                         .collect();
 
                 Observation {
-                    rv: rv,
-                    bisector: bisector,
+                    rv,
+                    bisector,
                 }
             })
             .collect()
@@ -264,11 +267,13 @@ impl Simulation {
 
     /// Draw the simulation in a row-major fashion, as it would be seen in the visible
     /// wavelength band, 4000-7000 Angstroms.
-    pub fn draw_rgba(&mut self, time: f64, image: &mut Vec<u8>) {
+    pub fn draw_rgba(&mut self, time: f64) -> Vec<u8> {
         // This is slow because the image is row-major, but we navigate the simulation in
         // a column-major fashion to follow the rotational symmetry
         use boundingshape::BoundingShape;
         use linspace::floatrange;
+        let mut image = self.star.draw_rgba();
+
         self.check_fill_factor(time);
         let star_intensity = planck_integral(self.star.temperature, 4000e-10, 7000e-10);
         for spot in &mut self.spots {
@@ -307,6 +312,7 @@ impl Simulation {
                 }
             }
         }
+        image
     }
 }
 

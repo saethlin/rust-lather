@@ -1,35 +1,26 @@
 extern crate lather;
 extern crate png;
-use lather::{linspace, Simulation, Spot, SpotConfig};
-use std::sync::Arc;
+use lather::{linspace, Simulation, SpotConfig};
 
 fn main() {
     let mut sim = Simulation::sun();
-    sim.spots.push(Spot::from_config(
-        Arc::clone(&sim.star),
-        &SpotConfig {
-            latitude: 30.0,
-            longitude: 180.0,
-            fill_factor: 0.01,
-            plage: false,
-            mortal: false,
-        },
-    ));
-    sim.spots.push(Spot::from_config(
-        Arc::clone(&sim.star),
-        &SpotConfig {
-            latitude: -30.0,
-            longitude: 180.0,
-            fill_factor: 0.01,
-            plage: false,
-            mortal: false,
-        },
-    ));
+    sim.add_spot(&SpotConfig {
+        latitude: 30.0,
+        longitude: 180.0,
+        fill_factor: 0.01,
+        plage: false,
+        mortal: false,
+    });
+    sim.add_spot(&SpotConfig {
+        latitude: -30.0,
+        longitude: 180.0,
+        fill_factor: 0.01,
+        plage: false,
+        mortal: false,
+    });
 
     for time in linspace(5.0, 25.0, 100) {
-        let mut pix_image = sim.star.draw_rgba();
-        sim.draw_rgba(time, &mut pix_image);
-        save_png(&pix_image, &format!("{:.2}.png", time));
+        save_png(&sim.draw_rgba(time), &format!("{:.2}.png", time));
     }
 }
 

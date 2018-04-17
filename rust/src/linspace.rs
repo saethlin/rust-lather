@@ -32,8 +32,8 @@ impl ExactSizeIterator for Linspace {
 /// and `stop`, inclusive.
 pub fn linspace(start: f64, stop: f64, len: usize) -> Linspace {
     Linspace {
-        start: start,
-        len: len,
+        start,
+        len,
         step: (stop - start) / (len as f64 - 1.0),
         index: 0,
     }
@@ -75,9 +75,9 @@ pub fn floatrange(start: f64, stop: f64, step: f64) -> Floatrange {
     let len = ((stop - start) / step) as usize;
     Floatrange {
         index: 0,
-        len: len,
-        start: start,
-        step: step,
+        len,
+        start,
+        step,
     }
 }
 

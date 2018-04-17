@@ -37,7 +37,7 @@ fn main() {
         writeln!(output, "macro_rules! {} {{", name).unwrap();
         write!(output, "    () => ({{ vec![").unwrap();
         for val in array {
-            write!(output, "{:e}, ", val).unwrap();
+            write!(output, "{:.2e}, ", val).unwrap();
         }
         writeln!(output, "] }})\n}}").unwrap();
     }

@@ -28,8 +28,8 @@ mod solar_ccfs;
 mod simulation;
 pub use simulation::Observation;
 pub use simulation::Simulation;
-pub use spot::{Spot, SpotConfig};
-
+pub use spot::SpotConfig;
+pub use bounds::Bounds;
 mod linspace;
 pub use linspace::{floatrange, linspace};
 
@@ -106,7 +106,7 @@ pub unsafe extern "C" fn simulation_observe_flux(
         return std::ptr::null();
     }
     let time_slice = std::slice::from_raw_parts(times, n_times);
-    let output = (*sim).observe_flux(time_slice, wave_start, wave_end);
+    let output = (*sim).observe_flux(time_slice, Bounds::new(wave_start, wave_end));
     let ptr = output.as_ptr();
     std::mem::forget(output);
     ptr
@@ -126,7 +126,7 @@ pub unsafe extern "C" fn simulation_observe_rv(
     }
 
     let time_slice = std::slice::from_raw_parts(times, n_times);
-    let observations = (*sim).observe_rv(time_slice, wave_start, wave_end);
+    let observations = (*sim).observe_rv(time_slice, Bounds::new(wave_start, wave_end));
     let mut output = Vec::with_capacity(n_times * 1001);
     for ob in &observations {
         output.push(ob.rv);

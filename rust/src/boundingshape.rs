@@ -77,16 +77,15 @@ impl BoundingShape {
         let visible = x1 > 0.0 || x2 > 0.0;
 
         BoundingShape {
-            center: center,
-            circle_center: circle_center,
-            a: a,
-            b: b,
-            radius: radius,
-            circle_radius: circle_radius,
-            max_radius: max_radius,
-            visible: visible,
-            //on_edge: x1 < grid_interval || x2 < grid_interval,
-            grid_interval: grid_interval,
+            center,
+            circle_center,
+            a,
+            b,
+            radius,
+            circle_radius,
+            max_radius,
+            visible,
+            grid_interval,
         }
     }
 
@@ -128,12 +127,12 @@ impl BoundingShape {
             return None;
         }
 
-        let new_bounds = match guess {
-            &mut Some(ref the_guess) => self.z_bounds_ansatz(y, &the_guess),
-            &mut None => self.z_bounds_brute(y),
+        let new_bounds = match *guess {
+            Some(ref the_guess) => self.z_bounds_ansatz(y, &the_guess),
+            None => self.z_bounds_brute(y),
         };
 
-        *guess = new_bounds.clone();
+        *guess = new_bounds;
         new_bounds
     }
 

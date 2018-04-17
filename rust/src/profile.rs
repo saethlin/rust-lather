@@ -67,11 +67,6 @@ impl Profile {
         self.rv.len()
     }
 
-    /// Returns `true` if the profile has a length of 0.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
     /// Uses the pre-computed derivative to compute a shifted version of
     /// this profile's cross-correlation function by linear interpolation.
     /// The units of velocity must match those of the radial velocity used
