@@ -21,7 +21,7 @@ itertools = "0.7"
 quadrature = "0.1"
 rulinalg = "0.4"
 ndarray = "0.11"
-bencher = "0.1"
+bencher = {git = "https://github.com/saethlin/bencher"}
 png = "0.11"
 rustfft = "2.0"
 num-complex = "0.1"

@@ -5,6 +5,7 @@ use std::sync::Arc;
 use boundingshape::BoundingShape;
 use linspace::floatrange;
 use star::Star;
+use bounds::Bounds;
 
 #[derive(Deserialize, Serialize)]
 pub struct SpotConfig {
@@ -12,8 +13,6 @@ pub struct SpotConfig {
     pub longitude: f64,
     pub fill_factor: f64,
     pub plage: bool,
-    #[serde(skip)]
-    pub mortal: bool,
 }
 
 /// A circular starspot
@@ -27,10 +26,20 @@ pub struct Spot {
     pub radius: f64,
     pub temperature: f64,
     pub plage: bool,
-    pub mortal: bool,
-    pub time_appear: f64,
-    pub time_disappear: f64,
+    pub mortality: Mortality,
     pub intensity: f64,
+}
+
+#[derive(Debug)]
+pub enum Mortality {
+    Immortal,
+    Mortal(Bounds),
+}
+
+impl Default for Mortality {
+    fn default() -> Self {
+        Mortality::Immortal
+    }
 }
 
 impl Spot {
@@ -46,9 +55,7 @@ impl Spot {
             radius: (2.0 * config.fill_factor).sqrt(),
             temperature,
             plage: config.plage,
-            mortal: false,
-            time_appear: 0.0,
-            time_disappear: 15.0,
+            mortality: Mortality::Immortal,
             intensity: 0.0,
         }
     }
@@ -114,10 +121,9 @@ impl Spot {
 
     /// Returns `true` if this spot currently exists.
     pub fn alive(&self, time: f64) -> bool {
-        if !self.mortal {
-            true
-        } else {
-            time >= self.time_appear && time <= self.time_disappear
+        match self.mortality {
+            Mortality::Immortal => true,
+            Mortality::Mortal(lifetime) => time > lifetime.lower && time <= lifetime.upper,
         }
     }
 

@@ -1,5 +1,5 @@
 /// Boundaries or the extent of some quantity
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Bounds {
     pub lower: f64,
     pub upper: f64,

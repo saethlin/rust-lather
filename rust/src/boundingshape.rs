@@ -2,7 +2,7 @@ use std::f64::consts;
 
 use bounds::Bounds;
 use point::Point;
-use spot::Spot;
+use spot::{Spot, Mortality};
 
 pub struct BoundingShape {
     center: Point,
@@ -13,25 +13,24 @@ pub struct BoundingShape {
     circle_radius: f64,
     max_radius: f64,
     visible: bool,
-    //on_edge: bool,
     grid_interval: f64,
 }
 
 impl BoundingShape {
     pub fn new(spot: &Spot, time: f64) -> Self {
         let max_radius = spot.radius;
-        let radius = if spot.mortal {
-            let lifetime = spot.time_disappear - spot.time_appear;
-            let growth_time = 0.1 * lifetime;
-            if (time - spot.time_appear).abs() < growth_time {
-                spot.radius * (time - spot.time_appear).abs() / growth_time
-            } else if (time - spot.time_disappear).abs() < growth_time {
-                spot.radius * (time - spot.time_disappear).abs() / growth_time
-            } else {
-                spot.radius
+        let radius = match spot.mortality {
+            Mortality::Immortal => spot.radius,
+            Mortality::Mortal(lifetime) => {
+                let growth_time = 0.1 * (lifetime.upper - lifetime.lower);
+                if (time - lifetime.lower).abs() < growth_time {
+                    spot.radius * (time - lifetime.lower).abs() / growth_time
+                } else if (time - lifetime.upper).abs() < growth_time {
+                    spot.radius * (time - lifetime.upper).abs() / growth_time
+                } else {
+                    spot.radius
+                }
             }
-        } else {
-            spot.radius
         };
 
         let phase = (time % spot.star.period) / spot.star.period * 2.0 * consts::PI;

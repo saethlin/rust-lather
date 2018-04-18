@@ -15,7 +15,6 @@ fn observe_flux(b: &mut Bencher) {
         longitude: 180.0,
         fill_factor: 0.01,
         plage: false,
-        mortal: false,
     });
     let time: Vec<f64> = linspace(0.0, 25.05, 100).collect();
 
@@ -29,12 +28,11 @@ fn observe_rv(b: &mut Bencher) {
         longitude: 180.0,
         fill_factor: 0.01,
         plage: false,
-        mortal: false,
     });
     let time: Vec<f64> = linspace(0.0, 25.05, 100).collect();
 
     b.iter(|| sim.observe_rv(&time, Bounds::new(4000e-10, 5000e-10)));
 }
 
-benchmark_group!(benches, load_config, observe_flux, observe_rv,);
+benchmark_group!(benches, /*load_config, observe_flux,*/ observe_rv,);
 benchmark_main!(benches);

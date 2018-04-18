@@ -9,14 +9,12 @@ fn main() {
         longitude: 180.0,
         fill_factor: 0.01,
         plage: false,
-        mortal: false,
     });
     sim.add_spot(&SpotConfig {
         latitude: -30.0,
         longitude: 180.0,
         fill_factor: 0.01,
         plage: false,
-        mortal: false,
     });
 
     for time in linspace(5.0, 25.0, 100) {

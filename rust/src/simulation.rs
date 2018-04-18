@@ -9,6 +9,7 @@ use std::sync::RwLock;
 
 use bounds::Bounds;
 use spot::{Spot, SpotConfig};
+use spot::Mortality::Mortal;
 use star::{Star, StarConfig};
 
 /// An observed radial velocity and line bisector.
@@ -55,14 +56,12 @@ impl Config {
                     longitude: 180.0,
                     fill_factor: 0.01,
                     plage: false,
-                    mortal: false,
                 },
                 SpotConfig {
                     latitude: 30.0,
                     longitude: 180.0,
                     fill_factor: 0.01,
                     plage: false,
-                    mortal: false,
                 },
             ]),
         }
@@ -166,15 +165,16 @@ impl Simulation {
                         longitude: long_range.ind_sample(&mut *generator),
                         fill_factor: new_fill_factor,
                         plage: false,
-                        mortal: true,
                     },
                 );
-                new_spot.time_appear += time;
-                new_spot.time_disappear += time;
+                new_spot.mortality = Mortal(Bounds::new(time, time + 15.0));
 
+                // TODO: This is a hack
+                let new_appear = time;
+                let new_disappear = time + 15.0;
                 let collides = self.spots
                     .iter()
-                    .filter(|s| s.alive(new_spot.time_appear) || s.alive(new_spot.time_disappear))
+                    .filter(|s| s.alive(new_appear) || s.alive(new_disappear))
                     .any(|s| new_spot.collides_with(s));
 
                 if !collides {
