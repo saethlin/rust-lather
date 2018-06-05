@@ -1,9 +1,9 @@
 extern crate cbindgen;
 
 use std::env;
+use std::fmt::Write;
 use std::fs::File;
 use std::io::Read;
-use std::fmt::Write;
 
 fn main() {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
@@ -24,7 +24,8 @@ fn main() {
     let mut ccf_spot = Vec::new();
 
     for line in ccf_file.lines().skip(2) {
-        let fields: Vec<f64> = line.split_whitespace()
+        let fields: Vec<f64> = line
+            .split_whitespace()
             .map(|s| s.parse().unwrap())
             .collect();
         rv.push(fields[0] * 1e3);
@@ -43,10 +44,10 @@ fn main() {
     }
 
     let mut old_output = String::new();
-        if let Ok(mut f) = File::open("src/solar_ccfs.rs") {
-            f.read_to_string(&mut old_output).unwrap();
-        }
-    
+    if let Ok(mut f) = File::open("src/solar_ccfs.rs") {
+        f.read_to_string(&mut old_output).unwrap();
+    }
+
     if old_output != output {
         use std::io::Write;
         let mut output_file = File::create("src/solar_ccfs.rs").unwrap();

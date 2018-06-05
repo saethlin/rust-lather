@@ -2,7 +2,7 @@ use std::f64::consts;
 
 use bounds::Bounds;
 use point::Point;
-use spot::{Spot, Mortality};
+use spot::{Mortality, Spot};
 
 pub struct BoundingShape {
     center: Point,

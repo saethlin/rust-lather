@@ -21,14 +21,14 @@ itertools = "0.7"
 quadrature = "0.1"
 rulinalg = "0.4"
 ndarray = "0.11"
-bencher = {git = "https://github.com/saethlin/bencher"}
+bencher = "0.1.5"
 png = "0.11"
 rustfft = "2.0"
 num-complex = "0.1"
 gnuplot = "0.0"
 rayon = "1.0"
 derivative = "1.0"
-faster = {git = "https://github.com/AdamNiederer/faster", optional = true}
+faster = {git="https://github.com/AdamNiederer/faster", optional=true}
 serde = "1.0"
 serde_derive = "1.0"
 toml = "0.4"

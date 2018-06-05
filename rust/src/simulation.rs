@@ -8,8 +8,8 @@ use std::sync::Arc;
 use std::sync::RwLock;
 
 use bounds::Bounds;
-use spot::{Spot, SpotConfig};
 use spot::Mortality::Mortal;
+use spot::{Spot, SpotConfig};
 use star::{Star, StarConfig};
 
 /// An observed radial velocity and line bisector.
@@ -136,8 +136,13 @@ impl Simulation {
             .push(Spot::from_config(Arc::clone(&self.star), config));
     }
 
+    pub fn clear_spots(&mut self) {
+        self.spots.clear();
+    }
+
     fn check_fill_factor(&mut self, time: f64) {
-        let mut current_fill_factor = self.spots
+        let mut current_fill_factor = self
+            .spots
             .iter()
             .filter(|s| s.alive(time))
             .map(|s| (s.radius * s.radius) / 2.0)
@@ -148,7 +153,8 @@ impl Simulation {
         let long_range = Range::new(0.0, 360.0);
 
         if current_fill_factor < self.star.minimum_fill_factor {
-            let mut generator = self.generator
+            let mut generator = self
+                .generator
                 .write()
                 .expect("Simulation RNG lock was poisoned by another panic");
 
@@ -172,7 +178,8 @@ impl Simulation {
                 // TODO: This is a hack
                 let new_appear = time;
                 let new_disappear = time + 15.0;
-                let collides = self.spots
+                let collides = self
+                    .spots
                     .iter()
                     .filter(|s| s.alive(new_appear) || s.alive(new_disappear))
                     .any(|s| new_spot.collides_with(s));
@@ -187,15 +194,12 @@ impl Simulation {
 
     /// Computes the relative brightness of this system at each time (in days),
     /// when observed in the wavelength band between `wavelength_min` and `wavelength_max`.
-    pub fn observe_flux(
-        &mut self,
-        time: &[f64],
-        wavelength: Bounds,
-    ) -> Vec<f64> {
-        let star_intensity = planck_integral(self.star.temperature, wavelength.lower, wavelength.upper);
+    pub fn observe_flux(&mut self, time: &[f64], wavelength: Bounds) -> Vec<f64> {
+        let star_intensity =
+            planck_integral(self.star.temperature, wavelength.lower, wavelength.upper);
         for spot in &mut self.spots {
-            spot.intensity =
-                planck_integral(spot.temperature, wavelength.lower, wavelength.upper) / star_intensity;
+            spot.intensity = planck_integral(spot.temperature, wavelength.lower, wavelength.upper)
+                / star_intensity;
         }
         for t in time.iter() {
             self.check_fill_factor(*t);
@@ -211,15 +215,12 @@ impl Simulation {
 
     /// Computes the radial velocity and line bisector of this system at each time (in days),
     /// when observed in the wavelength band between `wavelength_min` and `wavelength_max`.
-    pub fn observe_rv(
-        &mut self,
-        time: &[f64],
-        wavelength: Bounds,
-    ) -> Vec<Observation> {
-        let star_intensity = planck_integral(self.star.temperature, wavelength.lower, wavelength.upper);
+    pub fn observe_rv(&mut self, time: &[f64], wavelength: Bounds) -> Vec<Observation> {
+        let star_intensity =
+            planck_integral(self.star.temperature, wavelength.lower, wavelength.upper);
         for spot in &mut self.spots {
-            spot.intensity =
-                planck_integral(spot.temperature, wavelength.lower, wavelength.upper) / star_intensity;
+            spot.intensity = planck_integral(spot.temperature, wavelength.lower, wavelength.upper)
+                / star_intensity;
         }
 
         for t in time.iter() {
@@ -257,10 +258,7 @@ impl Simulation {
                         .map(|b| b - self.star.zero_rv)
                         .collect();
 
-                Observation {
-                    rv,
-                    bisector,
-                }
+                Observation { rv, bisector }
             })
             .collect()
     }

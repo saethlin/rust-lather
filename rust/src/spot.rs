@@ -3,9 +3,9 @@ use std::f64::consts;
 use std::sync::Arc;
 
 use boundingshape::BoundingShape;
+use bounds::Bounds;
 use linspace::floatrange;
 use star::Star;
-use bounds::Bounds;
 
 #[derive(Deserialize, Serialize)]
 pub struct SpotConfig {

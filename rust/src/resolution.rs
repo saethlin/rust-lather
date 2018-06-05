@@ -11,7 +11,8 @@ pub fn set_resolution(rv: &[f64], ccf: &[f64]) -> Vec<f64> {
     let resolution = 1e5;
     let profile_fwhm = c / resolution;
     let profile_sigma = profile_fwhm / (2.0 * sqrt(2.0 * ln(2.0)));
-    let kernel: Vec<Complex<f64>> = rv.iter()
+    let kernel: Vec<Complex<f64>> = rv
+        .iter()
         .map(|r| exp(-r.powi(2) / (2.0 * profile_sigma.powi(2))))
         .map(|n| Complex::new(n, 0.0))
         .collect();

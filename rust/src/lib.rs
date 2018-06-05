@@ -26,10 +26,10 @@ extern crate toml;
 mod solar_ccfs;
 
 mod simulation;
+pub use bounds::Bounds;
 pub use simulation::Observation;
 pub use simulation::Simulation;
 pub use spot::SpotConfig;
-pub use bounds::Bounds;
 mod linspace;
 pub use linspace::{floatrange, linspace};
 
@@ -50,17 +50,10 @@ use std::os::raw::c_char;
 /// Build a simulation from a path to a config file
 #[no_mangle]
 pub unsafe extern "C" fn simulation_new(filename: *const c_char) -> *mut Simulation {
-    let mut obj = Box::new(Simulation::from_config(
+    let obj = Box::new(Simulation::from_config(
         CStr::from_ptr(filename).to_str().unwrap(),
     ));
-
-    let ptr: *mut _ = &mut *obj;
-
-    // Forget discards its argument (passed by-move), without triggering its
-    // destructor, if it has one.
-    ::std::mem::forget(obj);
-
-    ptr
+    Box::into_raw(obj)
 }
 
 /// Close down a simulation
@@ -70,11 +63,8 @@ pub unsafe extern "C" fn simulation_free(sim: *mut Simulation) {
         return;
     }
 
-    // Now, we know the pointer is non-null, we can continue.
-    let obj: Box<Simulation> = ::std::mem::transmute(sim);
-
-    // Explicitly drop the object, unnecessary but nice
-    ::std::mem::drop(obj);
+    // Take ownership of the pointer so that we drop it
+    let _: Box<Simulation> = ::std::mem::transmute(sim);
 }
 
 /// Print a simulation
@@ -137,4 +127,35 @@ pub unsafe extern "C" fn simulation_observe_rv(
     let ptr = output.as_ptr();
     std::mem::forget(output);
     ptr
+}
+
+/// Remove all spots on this simulation
+#[no_mangle]
+pub unsafe extern "C" fn simulation_clear_spots(sim: *mut Simulation) {
+    if sim.is_null() {
+        return;
+    }
+
+    (*sim).clear_spots();
+}
+
+/// Add a spot to the simulation
+#[no_mangle]
+pub unsafe extern "C" fn simulation_add_spot(
+    sim: *mut Simulation,
+    latitude: f64,
+    longitude: f64,
+    fill_factor: f64,
+    plage: bool,
+) {
+    if sim.is_null() {
+        return;
+    }
+
+    (*sim).add_spot(&SpotConfig {
+        latitude,
+        longitude,
+        fill_factor,
+        plage,
+    });
 }

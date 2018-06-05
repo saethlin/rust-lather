@@ -2,7 +2,7 @@
 extern crate bencher;
 extern crate lather;
 use bencher::Bencher;
-use lather::{linspace, Simulation, SpotConfig, Bounds};
+use lather::{linspace, Bounds, Simulation, SpotConfig};
 
 fn load_config(b: &mut Bencher) {
     b.iter(|| Simulation::from_config("../examples/sun.toml"));
@@ -34,5 +34,5 @@ fn observe_rv(b: &mut Bencher) {
     b.iter(|| sim.observe_rv(&time, Bounds::new(4000e-10, 5000e-10)));
 }
 
-benchmark_group!(benches, /*load_config, observe_flux,*/ observe_rv,);
+benchmark_group!(benches, observe_rv); //load_config, observe_flux, observe_rv);
 benchmark_main!(benches);
