@@ -14,14 +14,13 @@ categories = ["science", "simulation"]
 
 [features]
 simd = ["faster"]
+default = ["simd"]
 
 [dependencies]
 rand = "0.4"
 itertools = "0.7"
 quadrature = "0.1"
 rulinalg = "0.4"
-ndarray = "0.11"
-bencher = "0.1.5"
 png = "0.11"
 rustfft = "2.0"
 num-complex = "0.1"
@@ -32,10 +31,10 @@ faster = {git="https://github.com/AdamNiederer/faster", optional=true}
 serde = "1.0"
 serde_derive = "1.0"
 toml = "0.4"
+GSL = {version = "0.4", features=["v2"]}
 
-[dependencies.GSL]
-version = "0.4"
-features = ["v2"]
+[dev-dependencies]
+criterion = "0.2"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -43,6 +42,7 @@ crate-type = ["cdylib", "rlib"]
 [build-dependencies]
 cbindgen = "0.5.2"
 
-[profile.release]
-lto = true
+[[bench]]
+name = "bench_rv"
+harness = false
 
