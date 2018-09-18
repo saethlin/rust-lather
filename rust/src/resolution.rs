@@ -1,5 +1,5 @@
-use num_complex::Complex;
-use rustfft;
+use rustfft::num_complex::Complex;
+use rustfft::FFTplanner;
 
 #[allow(dead_code)]
 pub fn set_resolution(rv: &[f64], ccf: &[f64]) -> Vec<f64> {
@@ -7,7 +7,7 @@ pub fn set_resolution(rv: &[f64], ccf: &[f64]) -> Vec<f64> {
     let ln = f64::ln;
     let exp = f64::exp;
 
-    let c = 299792458.0;
+    let c = 299_792_458.0;
     let resolution = 1e5;
     let profile_fwhm = c / resolution;
     let profile_sigma = profile_fwhm / (2.0 * sqrt(2.0 * ln(2.0)));
@@ -18,8 +18,8 @@ pub fn set_resolution(rv: &[f64], ccf: &[f64]) -> Vec<f64> {
         .collect();
 
     // FFT convolution
-    let fft = rustfft::FFTplanner::new(false).plan_fft(rv.len());
-    let inverse_fft = rustfft::FFTplanner::new(true).plan_fft(rv.len());
+    let fft = FFTplanner::new(false).plan_fft(rv.len());
+    let inverse_fft = FFTplanner::new(true).plan_fft(rv.len());
 
     // FFT of the kernel
     let mut fft_kernel = vec![Complex::new(0.0, 0.0); rv.len()];

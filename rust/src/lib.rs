@@ -9,7 +9,6 @@ extern crate derivative;
 #[cfg(feature = "simd")]
 extern crate faster;
 extern crate itertools;
-extern crate num_complex;
 extern crate quadrature;
 extern crate rand;
 extern crate rayon;

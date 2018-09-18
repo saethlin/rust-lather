@@ -29,12 +29,16 @@ pub fn compute_bisector(rv: &[f64], profile: &[f64]) -> Vec<f64> {
     right_spline.init(right_profile, right_rv);
 
     // Can't just use slices here because we need to provide the data in revese order for GSL
-    let (left_profile, left_rv): (Vec<f64>, Vec<f64>) = cons_tuples(profile.iter().rev().zip(profile.iter().rev().skip(1)).zip(
-            rv.iter().rev(),
-        )).skip(profile.len()-min_index-1) // off-by-one correction to make sure both sides pick up the peak point
-            .take_while(|&(this, next, _)| *this <= *next)
-            .map(|(this, _, rv)| (this, rv))
-            .unzip();
+    let (left_profile, left_rv): (Vec<f64>, Vec<f64>) = cons_tuples(
+        profile
+            .iter()
+            .rev()
+            .zip(profile.iter().rev().skip(1))
+            .zip(rv.iter().rev()),
+    ).skip(profile.len() - min_index - 1) // off-by-one correction to make sure both sides pick up the peak point
+    .take_while(|&(this, next, _)| *this <= *next)
+    .map(|(this, _, rv)| (this, rv))
+    .unzip();
 
     let mut left_acc = rgsl::InterpAccel::new();
     let left_spline = rgsl::Spline::new(&rgsl::InterpType::cspline(), left_rv.len()).unwrap();

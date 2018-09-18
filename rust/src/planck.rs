@@ -2,8 +2,8 @@ use quadrature::clenshaw_curtis::integrate;
 
 fn planck(wavelength: f64, temperature: f64) -> f64 {
     let exp_m1 = f64::exp_m1;
-    let c: f64 = 299792458.0;
-    let h = 6.62606896e-34;
+    let c: f64 = 299_792_458.0;
+    let h = 6.626_068_96e-34;
     let k_b = 1.380e-23;
     2.0 * h * c.powi(2) * 1.0
         / (wavelength.powi(5) * (exp_m1((h * c) / (wavelength * k_b * temperature))))

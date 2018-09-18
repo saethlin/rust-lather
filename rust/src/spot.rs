@@ -76,8 +76,7 @@ impl Spot {
                 } else {
                     0.0
                 }
-            })
-                .sum();
+            }).sum();
             (1.0 - self.intensity) * limb_integral
         } else {
             0.0

@@ -23,7 +23,8 @@ impl Profile {
             ccf[1..].simd_iter(f64s(0.0)),
             rv[..rv.len() - 1].simd_iter(f64s(0.0)),
             rv[1..].simd_iter(f64s(0.0)),
-        ).zip()
+        )
+            .zip()
             .simd_map(|(cl, cr, rvl, rvr)| (cl - cr) / (rvl - rvr))
             .scalar_fill(&mut derivative);
 
@@ -85,7 +86,8 @@ impl Profile {
             (
                 self.ccf[..output.len() - quotient].simd_iter(f64s(0.0)),
                 self.derivative[..output.len() - quotient].simd_iter(f64s(0.0)),
-            ).zip()
+            )
+                .zip()
                 .simd_map(|(ccf, der)| ccf - f64s(remainder) * der)
                 .scalar_fill(&mut output[quotient..]);
         } else {
@@ -94,7 +96,8 @@ impl Profile {
             (
                 self.ccf[quot..].simd_iter(f64s(0.0)),
                 self.derivative[quot..].simd_iter(f64s(0.0)),
-            ).zip()
+            )
+                .zip()
                 .simd_map(|(ccf, der)| ccf - f64s(remainder) * der)
                 .scalar_fill(&mut output[..len - quot]);
 
@@ -119,8 +122,7 @@ impl Profile {
                         .zip(self.derivative.iter())
                         .take(self.ccf.len() - quotient as usize)
                         .map(|(ccf, der)| ccf - remainder * der),
-                )
-                .zip(output.iter_mut())
+                ).zip(output.iter_mut())
                 .for_each(|(shifted, output)| *output = shifted)
         } else {
             self.ccf

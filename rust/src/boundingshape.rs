@@ -215,8 +215,7 @@ impl BoundingShape {
     pub fn collides_with(&self, other: &BoundingShape) -> bool {
         let distance = ((self.center.x - other.center.x).powi(2)
             + (self.center.y - other.center.y).powi(2)
-            + (self.center.z - other.center.z).powi(2))
-            .sqrt();
+            + (self.center.z - other.center.z).powi(2)).sqrt();
         distance < (self.max_radius + other.max_radius)
     }
 }

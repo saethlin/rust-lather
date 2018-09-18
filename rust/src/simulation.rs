@@ -1,7 +1,9 @@
 use compute_bisector::compute_bisector;
 use fit_rv::fit_rv;
 use planck::planck_integral;
-use rand::distributions::{IndependentSample, LogNormal, Range};
+//use rand::distributions::{IndependentSample, LogNormal, Range};
+use rand::distributions::{LogNormal, Uniform};
+use rand::prelude::*;
 use rayon::prelude::*;
 use std::iter;
 use std::sync::Arc;
@@ -27,7 +29,7 @@ pub struct Simulation {
     star: Arc<Star>,
     spots: Vec<Spot>,
     #[derivative(Debug = "ignore")]
-    generator: Arc<RwLock<::rand::StdRng>>,
+    generator: Arc<RwLock<StdRng>>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -84,7 +86,7 @@ impl Simulation {
                 minimum_fill_factor: 0.00,
             })),
             spots: Vec::new(),
-            generator: Arc::new(RwLock::new(::rand::StdRng::new().unwrap())),
+            generator: Arc::new(RwLock::new(StdRng::from_entropy())),
         }
     }
 
@@ -100,8 +102,7 @@ impl Simulation {
                     "Tried to open a config file at {:?}, but it doesn't seem to exist",
                     config_path
                 );
-            })
-            .read_to_string(&mut contents)
+            }).read_to_string(&mut contents)
             .unwrap_or_else(|_| {
                 panic!("Unable to read config file at {:?}", &config_path);
             });
@@ -118,7 +119,7 @@ impl Simulation {
         let mut sim = Simulation {
             star: Arc::new(Star::from_config(&config.star)),
             spots: Vec::new(),
-            generator: Arc::new(RwLock::new(::rand::StdRng::new().unwrap())),
+            generator: Arc::new(RwLock::new(StdRng::from_entropy())),
         };
 
         if let Some(spot_configs) = config.spots {
@@ -149,8 +150,8 @@ impl Simulation {
             .sum::<f64>();
 
         let fill_range = LogNormal::new(0.5, 4.0);
-        let lat_range = Range::new(-30.0, 30.0);
-        let long_range = Range::new(0.0, 360.0);
+        let lat_range = Uniform::new(-30.0, 30.0);
+        let long_range = Uniform::new(0.0, 360.0);
 
         if current_fill_factor < self.star.minimum_fill_factor {
             let mut generator = self
@@ -160,15 +161,15 @@ impl Simulation {
 
             while current_fill_factor < self.star.minimum_fill_factor {
                 let new_fill_factor = iter::repeat(())
-                    .map(|_| fill_range.ind_sample(&mut *generator) * 9.4e-6)
+                    .map(|_| fill_range.sample(&mut *generator) * 9.4e-6)
                     .find(|v| *v < 0.001)
                     .unwrap();
 
                 let mut new_spot = Spot::from_config(
                     self.star.clone(),
                     &SpotConfig {
-                        latitude: lat_range.ind_sample(&mut *generator),
-                        longitude: long_range.ind_sample(&mut *generator),
+                        latitude: lat_range.sample(&mut *generator),
+                        longitude: long_range.sample(&mut *generator),
                         fill_factor: new_fill_factor,
                         plage: false,
                     },
@@ -209,8 +210,7 @@ impl Simulation {
             .map(|t| {
                 let spot_flux: f64 = self.spots.iter().map(|s| s.get_flux(*t)).sum();
                 (self.star.flux_quiet - spot_flux) / self.star.flux_quiet
-            })
-            .collect()
+            }).collect()
     }
 
     /// Computes the radial velocity and line bisector of this system at each time (in days),
@@ -250,7 +250,8 @@ impl Simulation {
 
                 let rv = fit_rv(&self.star.profile_quiet.rv, &spot_profile) - self.star.zero_rv;
 
-                let bisector: Vec<f64> = compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
+                let bisector: Vec<f64> =
+                    compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
                         .iter()
                         // TODO: Should I actually return the points that come back from this?
                         // Do the Y values actually matter?
@@ -259,8 +260,7 @@ impl Simulation {
                         .collect();
 
                 Observation { rv, bisector }
-            })
-            .collect()
+            }).collect()
     }
 
     /// Draw the simulation in a row-major fashion, as it would be seen in the visible
