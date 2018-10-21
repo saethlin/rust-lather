@@ -13,7 +13,7 @@ keywords = ["astronomy"]
 categories = ["science", "simulation"]
 
 [features]
-simd = ["faster"]
+#simd = ["faster"]
 experimental = []
 
 [dependencies]
@@ -26,7 +26,7 @@ rustfft = "2.1"
 gnuplot = "0.0"
 rayon = "1.0"
 derivative = "1.0"
-faster = {git="https://github.com/AdamNiederer/faster", optional=true}
+#faster = {git="https://github.com/AdamNiederer/faster", optional=true}
 serde = "1.0"
 serde_derive = "1.0"
 toml = "0.4"
