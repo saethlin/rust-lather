@@ -39,6 +39,7 @@ struct Config {
 }
 
 impl Config {
+    // This is only used to produce our pretty example if somebody feeds in a bad config
     fn example() -> Config {
         Config {
             star: StarConfig {
@@ -83,7 +84,7 @@ impl Simulation {
                 spot_temp_diff: 663.0,
                 limb_linear: 0.29,
                 limb_quadratic: 0.34,
-                minimum_fill_factor: 0.00,
+                minimum_fill_factor: 0.01,
             })),
             spots: Vec::new(),
             generator: Arc::new(RwLock::new(StdRng::from_entropy())),
@@ -152,6 +153,7 @@ impl Simulation {
         let fill_range = LogNormal::new(0.5, 4.0);
         let lat_range = Uniform::new(-30.0, 30.0);
         let long_range = Uniform::new(0.0, 360.0);
+        let lifetime_range = Uniform::new(10.0, 20.0);
 
         if current_fill_factor < self.star.minimum_fill_factor {
             let mut generator = self
@@ -174,9 +176,12 @@ impl Simulation {
                         plage: false,
                     },
                 );
-                new_spot.mortality = Mortal(Bounds::new(time, time + 15.0));
+                new_spot.mortality = Mortal(Bounds::new(
+                    time,
+                    time + lifetime_range.sample(&mut *generator),
+                ));
 
-                // TODO: This is a hack
+                // TODO: This collision checking might be subpar
                 let new_appear = time;
                 let new_disappear = time + 15.0;
                 let collides = self

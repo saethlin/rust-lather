@@ -121,6 +121,9 @@ impl BoundingShape {
         }
     }
 
+    // TODO: There ought to be a way to do something clever here using the last iteration's
+    // bounds, but so far I can't make it work. So we just use the brute force method.
+    #[cfg(feature = "experimental")]
     pub fn z_bounds(&self, y: f64, guess: &mut Option<Bounds>) -> Option<Bounds> {
         if y.abs() >= 1.0 {
             return None;
@@ -135,6 +138,16 @@ impl BoundingShape {
         new_bounds
     }
 
+    #[cfg(not(feature = "experimental"))]
+    pub fn z_bounds(&self, y: f64, _guess: &mut Option<Bounds>) -> Option<Bounds> {
+        if y.abs() >= 1.0 {
+            return None;
+        }
+
+        self.z_bounds_brute(y)
+    }
+
+    #[cfg(feature = "experimental")]
     fn z_bounds_ansatz(&self, y: f64, guess: &Bounds) -> Option<Bounds> {
         use linspace::floatrange;
         let z_max = if !self.on_spot(y, guess.upper) {
