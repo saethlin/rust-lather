@@ -19,18 +19,17 @@ class Simulation:
         time_ptr = ffi.cast("double *", time.ctypes.data)
         flux_ptr = lib.simulation_observe_flux(self._native, time_ptr, time.size, wave_start, wave_end)
         flux_buffer = ffi.buffer(flux_ptr, time.size*8)
-        return np.frombuffer(flux_buffer, dtype=float, count=time.size)
+        return np.frombuffer(flux_buffer, dtype=float, count=time.size).copy()
 
     def observe_rv(self, time, wave_start, wave_end):
         time_ptr = ffi.cast("double *", time.ctypes.data)
 
-        rv_ptr = lib.simulation_observe_rv(self._native, time_ptr, time.size, wave_start, wave_end)
-        rv_buffer = ffi.buffer(rv_ptr, time.size*8)
-        rv_array = np.frombuffer(rv_buffer, dtype=float, count=time.size)
+        data_ptr = lib.simulation_observe_rv(self._native, time_ptr, time.size, wave_start, wave_end)
+        # Total size is rv and bisectors
+        data_buffer = ffi.buffer(data_ptr, 8*time.size + 8*(time.size * 1_000))
+        data = np.frombuffer(data_buffer, dtype=np.float64)
 
-        bisector_ptr = rv_ptr + (time.size)
-        bisector_buffer = ffi.buffer(bisector_ptr, 8*(time.size * 1_000))
-        bisector_array = np.frombuffer(bisector_buffer, dtype=float, count=time.size*1_000)
-        bisector_array.shape = (time.size, 1_000)
+        rv = data[:time.size].copy()
+        bisectors = data[time.size:].reshape(time.size, 1_000).copy()
 
-        return rv_array, bisector_array
+        return rv, bisectors
