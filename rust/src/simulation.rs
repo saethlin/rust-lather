@@ -201,14 +201,15 @@ impl Simulation {
     /// Computes the relative brightness of this system at each time (in days),
     /// when observed in the wavelength band between `wavelength_min` and `wavelength_max`.
     pub fn observe_flux(&mut self, time: &[f64], wavelength: Bounds) -> Vec<f64> {
+        for t in time.iter() {
+            self.check_fill_factor(*t);
+        }
+
         let star_intensity =
             planck_integral(self.star.temperature, wavelength.lower, wavelength.upper);
         for spot in &mut self.spots {
             spot.intensity = planck_integral(spot.temperature, wavelength.lower, wavelength.upper)
                 / star_intensity;
-        }
-        for t in time.iter() {
-            self.check_fill_factor(*t);
         }
 
         time.par_iter()
@@ -221,15 +222,15 @@ impl Simulation {
     /// Computes the radial velocity and line bisector of this system at each time (in days),
     /// when observed in the wavelength band between `wavelength_min` and `wavelength_max`.
     pub fn observe_rv(&mut self, time: &[f64], wavelength: Bounds) -> Vec<Observation> {
+        for t in time.iter() {
+            self.check_fill_factor(*t);
+        }
+
         let star_intensity =
             planck_integral(self.star.temperature, wavelength.lower, wavelength.upper);
         for spot in &mut self.spots {
             spot.intensity = planck_integral(spot.temperature, wavelength.lower, wavelength.upper)
                 / star_intensity;
-        }
-
-        for t in time.iter() {
-            self.check_fill_factor(*t);
         }
 
         time.par_iter()

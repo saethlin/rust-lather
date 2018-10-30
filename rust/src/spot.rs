@@ -122,7 +122,7 @@ impl Spot {
     pub fn alive(&self, time: f64) -> bool {
         match self.mortality {
             Mortality::Immortal => true,
-            Mortality::Mortal(lifetime) => time > lifetime.lower && time <= lifetime.upper,
+            Mortality::Mortal(lifetime) => time >= lifetime.lower && time <= lifetime.upper,
         }
     }
 
