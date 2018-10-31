@@ -1,13 +1,11 @@
 use compute_bisector::compute_bisector;
 use fit_rv::fit_rv;
 use planck::planck_integral;
-//use rand::distributions::{IndependentSample, LogNormal, Range};
 use rand::distributions::{LogNormal, Uniform};
 use rand::prelude::*;
 use rayon::prelude::*;
 use std::iter;
-use std::sync::Arc;
-use std::sync::RwLock;
+use std::sync::{Arc, Mutex};
 
 use bounds::Bounds;
 use spot::Mortality::Mortal;
@@ -29,7 +27,7 @@ pub struct Simulation {
     star: Arc<Star>,
     spots: Vec<Spot>,
     #[derivative(Debug = "ignore")]
-    generator: Arc<RwLock<StdRng>>,
+    generator: Arc<Mutex<StdRng>>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -87,7 +85,7 @@ impl Simulation {
                 minimum_fill_factor: 0.01,
             })),
             spots: Vec::new(),
-            generator: Arc::new(RwLock::new(StdRng::from_entropy())),
+            generator: Arc::new(Mutex::new(StdRng::seed_from_u64(0x0123456789ABCDEFu64))),
         }
     }
 
@@ -120,7 +118,7 @@ impl Simulation {
         let mut sim = Simulation {
             star: Arc::new(Star::from_config(&config.star)),
             spots: Vec::new(),
-            generator: Arc::new(RwLock::new(StdRng::from_entropy())),
+            generator: Arc::new(Mutex::new(StdRng::seed_from_u64(0x0123456789ABCDEFu64))),
         };
 
         if let Some(spot_configs) = config.spots {
@@ -158,7 +156,7 @@ impl Simulation {
         if current_fill_factor < self.star.minimum_fill_factor {
             let mut generator = self
                 .generator
-                .write()
+                .lock()
                 .expect("Simulation RNG lock was poisoned by another panic");
 
             while current_fill_factor < self.star.minimum_fill_factor {
