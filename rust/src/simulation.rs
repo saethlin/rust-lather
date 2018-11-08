@@ -212,7 +212,12 @@ impl Simulation {
 
         time.par_iter()
             .map(|t| {
-                let spot_flux: f64 = self.spots.iter().map(|s| s.get_flux(*t)).sum();
+                let spot_flux: f64 = self
+                    .spots
+                    .iter()
+                    .filter(|s| s.alive(*t))
+                    .map(|s| s.get_flux(*t))
+                    .sum();
                 (self.star.flux_quiet - spot_flux) / self.star.flux_quiet
             }).collect()
     }
