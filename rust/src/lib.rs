@@ -24,8 +24,6 @@ mod linspace;
 mod planck;
 mod point;
 mod profile;
-#[cfg(feature = "rustfft")]
-mod resolution;
 mod simulation;
 mod solar_ccfs;
 mod spot;
@@ -110,7 +108,7 @@ pub unsafe extern "C" fn simulation_observe_rv(
 
     let time_slice = std::slice::from_raw_parts(times, n_times);
     let observations = (*sim).observe_rv(time_slice, Bounds::new(wave_start, wave_end));
-    let mut output = Vec::with_capacity(n_times * 1001);
+    let mut output = Vec::with_capacity(n_times * 401);
     for ob in &observations {
         output.push(ob.rv);
     }

@@ -14,7 +14,6 @@ fn observe_flux(b: &mut Bencher) {
         plage: false,
     });
     let time: Vec<f64> = linspace(0.0, 25.05, 100).collect();
-
     b.iter(|| sim.observe_flux(&time, Bounds::new(4000e-10, 5000e-10)));
 }
 */

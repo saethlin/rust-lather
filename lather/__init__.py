@@ -26,12 +26,12 @@ class Simulation:
         time_ptr = ffi.cast("double *", time.ctypes.data)
 
         data_ptr = lib.simulation_observe_rv(self._native, time_ptr, time.size, wave_start, wave_end)
-        # Total size is rv and bisectors
-        data_buffer = ffi.buffer(data_ptr, 8*time.size + 8*(time.size * 1_000))
+        # Total size is rv and respective ccfs
+        data_buffer = ffi.buffer(data_ptr, 8*time.size + 8*(time.size * 401))
         data = np.frombuffer(data_buffer, dtype=np.float64)
 
         rv = data[:time.size].copy()
-        bisectors = data[time.size:].reshape(time.size, 1_000).copy()
+        bisectors = data[time.size:].reshape(time.size, 401).copy()
 
         return rv, bisectors
 

@@ -11,7 +11,7 @@ use spot::Mortality::Mortal;
 use spot::{Spot, SpotConfig};
 use star::{Star, StarConfig};
 
-/// An observed radial velocity and line bisector.
+/// An observed radial velocity and line profile.
 pub struct Observation {
     /// The radial velocity value in m/s.
     pub rv: f64,
@@ -249,25 +249,7 @@ impl Simulation {
                     *spot = *star - *spot;
                 }
 
-                /*
-                use resolution::set_resolution;
-                let spot_profile = set_resolution(&self.star.profile_spot.rv, &spot_profile);
-                println!("{:?}", spot_profile);
-                panic!();
-                */
-
                 let rv = fit_rv(&self.star.profile_quiet.rv, &spot_profile) - self.star.zero_rv;
-
-                /*
-                let bisector: Vec<f64> =
-                    compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
-                        .iter()
-                        // TODO: Should I actually return the points that come back from this?
-                        // Do the Y values actually matter?
-                        //.map(|b| b.x - self.star.zero_rv)
-                        .map(|b| b - self.star.zero_rv)
-                        .collect();
-                */
 
                 Observation {
                     rv,
