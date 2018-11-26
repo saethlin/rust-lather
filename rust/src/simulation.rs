@@ -1,4 +1,3 @@
-use compute_bisector::compute_bisector;
 use fit_rv::fit_rv;
 use planck::planck_integral;
 use rand::distributions::{LogNormal, Uniform};
@@ -16,8 +15,8 @@ use star::{Star, StarConfig};
 pub struct Observation {
     /// The radial velocity value in m/s.
     pub rv: f64,
-    /// The line bisector in m/s.
-    pub bisector: Vec<f64>,
+    /// The ccf for this observation, RV values available from solar_ccfs::RV.
+    pub ccf: Vec<f64>,
 }
 
 /// A model of a star with spots that can be observed.
@@ -259,6 +258,7 @@ impl Simulation {
 
                 let rv = fit_rv(&self.star.profile_quiet.rv, &spot_profile) - self.star.zero_rv;
 
+                /*
                 let bisector: Vec<f64> =
                     compute_bisector(&self.star.profile_quiet.rv, &spot_profile)
                         .iter()
@@ -267,8 +267,12 @@ impl Simulation {
                         //.map(|b| b.x - self.star.zero_rv)
                         .map(|b| b - self.star.zero_rv)
                         .collect();
+                */
 
-                Observation { rv, bisector }
+                Observation {
+                    rv,
+                    ccf: spot_profile,
+                }
             }).collect()
     }
 

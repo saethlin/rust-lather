@@ -12,22 +12,19 @@ extern crate itertools;
 extern crate quadrature;
 extern crate rand;
 extern crate rayon;
-extern crate rgsl;
 extern crate rulinalg;
-extern crate rustfft;
-extern crate serde;
 #[macro_use]
-extern crate serde_derive;
+extern crate serde;
 extern crate toml;
 
 mod boundingshape;
 mod bounds;
-mod compute_bisector;
 mod fit_rv;
 mod linspace;
 mod planck;
 mod point;
 mod profile;
+#[cfg(feature = "rustfft")]
 mod resolution;
 mod simulation;
 mod solar_ccfs;
@@ -118,7 +115,7 @@ pub unsafe extern "C" fn simulation_observe_rv(
         output.push(ob.rv);
     }
     for ob in &observations {
-        output.extend(&ob.bisector);
+        output.extend(&ob.ccf);
     }
     let ptr = output.as_ptr();
     std::mem::forget(output);

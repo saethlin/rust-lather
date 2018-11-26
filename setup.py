@@ -21,7 +21,7 @@ setup(
     zip_safe=False,
     platforms='any',
     setup_requires=['milksnake'],
-    install_requires=['milksnake', 'numpy'],
+    install_requires=['milksnake', 'numpy', 'scipy'],
     milksnake_tasks=[
         build_native
     ]

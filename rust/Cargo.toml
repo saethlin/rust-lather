@@ -13,6 +13,7 @@ keywords = ["astronomy"]
 categories = ["science", "simulation"]
 
 [features]
+# SIMD stuff commented-out until Rust 2018 ships
 #simd = ["faster"]
 experimental = []
 
@@ -22,26 +23,23 @@ itertools = "0.7"
 quadrature = "0.1"
 rulinalg = "0.4"
 png = "0.12"
-rustfft = "2.1"
-gnuplot = "0.0"
 rayon = "1.0"
 derivative = "1.0"
-#faster = {git="https://github.com/AdamNiederer/faster", optional=true}
 serde = "1.0"
 serde_derive = "1.0"
 toml = "0.4"
-GSL = {version = "1.0", features=["v2"]}
-
-[dev-dependencies]
-criterion = "0.2"
+#faster = {git="https://github.com/AdamNiederer/faster", optional=true}
+rustfft = {version = "2.1", optional = true}
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [build-dependencies]
-cbindgen = "0.6.2"
+cbindgen = "0.6"
+
+[dev-dependencies]
+criterion = "0.2"
 
 [[bench]]
 name = "bench_rv"
 harness = false
-

@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.interpolate
 from lather._native import ffi, lib
 
 
@@ -33,3 +34,33 @@ class Simulation:
         bisectors = data[time.size:].reshape(time.size, 1_000).copy()
 
         return rv, bisectors
+
+
+def compute_bisector(rv, ccf, size=1000):
+    # Split into red and blue parts
+    indmax = ccf.argmax()
+    red_ccf = ccf[indmax:][::-1]
+    red_rv = rv[indmax:][::-1]
+    blue_ccf = ccf[:indmax]
+    blue_rv = rv[:indmax]
+
+    red_mask = (red_ccf < 0.9) & (red_ccf > 0.1)
+    red_ccf = red_ccf[red_mask]
+    red_rv = red_rv[red_mask]
+
+    blue_mask = (blue_ccf < 0.9) & (blue_ccf > 0.1)
+    blue_ccf = blue_ccf[blue_mask]
+    blue_rv = blue_rv[blue_mask]
+
+    # Build spline coefficients for interpolation
+    ccf_eval = np.linspace(0.0, 1.0, size)
+    try:
+        red_tck = scipy.interpolate.splrep(red_ccf, red_rv)
+        blue_tck = scipy.interpolate.splrep(blue_ccf, blue_rv)
+        bisector = (scipy.interpolate.splev(ccf_eval, red_tck) +
+                    scipy.interpolate.splev(ccf_eval, blue_tck)) / 2
+    except (ValueError, TypeError):
+        bisector = ccf_eval * np.nan
+
+    return bisector
+
