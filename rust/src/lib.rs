@@ -20,27 +20,25 @@ extern crate serde;
 extern crate serde_derive;
 extern crate toml;
 
-#[macro_use]
-mod solar_ccfs;
-
-mod simulation;
-pub use bounds::Bounds;
-pub use simulation::Observation;
-pub use simulation::Simulation;
-pub use spot::SpotConfig;
-mod linspace;
-pub use linspace::{floatrange, linspace};
-
 mod boundingshape;
 mod bounds;
 mod compute_bisector;
 mod fit_rv;
+mod linspace;
 mod planck;
 mod point;
 mod profile;
 mod resolution;
+mod simulation;
+mod solar_ccfs;
 mod spot;
 mod star;
+
+pub use bounds::Bounds;
+pub use linspace::{floatrange, linspace};
+pub use simulation::Observation;
+pub use simulation::Simulation;
+pub use spot::SpotConfig;
 
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;

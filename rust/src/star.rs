@@ -6,7 +6,6 @@ use fit_rv::fit_rv;
 use linspace::linspace;
 use profile::Profile;
 use rayon::prelude::*;
-//use sun_ccfs::*;
 
 static SOLAR_RADIUS: f64 = 6.96e8;
 static DAYS_TO_SECONDS: f64 = 86400.0;
@@ -55,7 +54,8 @@ impl Star {
             (2.0 * consts::PI * config.radius * SOLAR_RADIUS) / (config.period * DAYS_TO_SECONDS);
         let equatorial_velocity = edge_velocity * (config.inclination * consts::PI / 180.0).sin();
 
-        let profile_quiet = Profile::new(rv!(), ccf_quiet!());
+        let profile_quiet =
+            Profile::new(::solar_ccfs::RV.to_vec(), ::solar_ccfs::CCF_QUIET.to_vec());
         let mut integrated_ccf = vec![0.0; profile_quiet.len()];
         let mut flux_quiet = 0.0;
 
@@ -87,11 +87,11 @@ impl Star {
             limb_quadratic: config.limb_quadratic,
             grid_size: config.grid_size,
             flux_quiet,
-            zero_rv: fit_rv(&rv!(), &integrated_ccf),
+            zero_rv: fit_rv(&::solar_ccfs::RV, &integrated_ccf),
             equatorial_velocity,
             minimum_fill_factor: config.minimum_fill_factor,
             integrated_ccf,
-            profile_spot: Profile::new(rv!(), ccf_spot!()),
+            profile_spot: Profile::new(::solar_ccfs::RV.to_vec(), ::solar_ccfs::CCF_SPOT.to_vec()),
             profile_quiet,
         }
     }

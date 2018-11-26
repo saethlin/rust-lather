@@ -7,40 +7,40 @@ use std::io::Read;
 
 fn main() {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let mut config: cbindgen::Config = Default::default();
+    let mut config = cbindgen::Config::default();
     config.language = cbindgen::Language::C;
     if let Ok(bindings) = cbindgen::generate_with_config(&crate_dir, config) {
         bindings.write_to_file("target/lather.h");
     }
 
-    let mut ccf_file = String::new();
-    File::open("resources/CCF_solar_spectrum_G2_FTS_reso_not_evenly_sampled_in_freq.rdb")
-        .unwrap()
-        .read_to_string(&mut ccf_file)
-        .unwrap();
+    let ccf_file = std::fs::read_to_string(
+        "resources/CCF_solar_spectrum_G2_FTS_reso_not_evenly_sampled_in_freq.rdb",
+    ).unwrap();
 
     let mut rv = Vec::new();
     let mut ccf_quiet = Vec::new();
     let mut ccf_spot = Vec::new();
 
     for line in ccf_file.lines().skip(2) {
-        let fields: Vec<f64> = line
-            .split_whitespace()
-            .map(|s| s.parse().unwrap())
-            .collect();
-        rv.push(fields[0] * 1e3);
-        ccf_quiet.push(fields[1]);
-        ccf_spot.push(fields[2]);
+        let mut fields = line.split_whitespace().map(|s| s.parse::<f64>().unwrap());
+        rv.push(fields.next().unwrap() * 1e3);
+        ccf_quiet.push(fields.next().unwrap());
+        ccf_spot.push(fields.next().unwrap());
     }
 
+    // Write to a string then compare it to the previous contents of the file,
+    // This prevents writing a new file every compilation which would cause cargo to recompile the
+    // whole project
     let mut output = String::new();
-    for &(ref name, ref array) in &[("rv", rv), ("ccf_quiet", ccf_quiet), ("ccf_spot", ccf_spot)] {
-        writeln!(output, "macro_rules! {} {{", name).unwrap();
-        write!(output, "    () => ({{ vec![").unwrap();
+    for &(ref name, ref array) in &[("RV", rv), ("CCF_QUIET", ccf_quiet), ("CCF_SPOT", ccf_spot)] {
+        let _ = write!(output, "pub static {}: [f64; {}] = [", name, array.len());
         for val in array {
-            write!(output, "{:.2e}, ", val).unwrap();
+            let _ = write!(output, "{:.2e}, ", val);
         }
-        writeln!(output, "] }})\n}}").unwrap();
+        // Remove the last trailing comma and space
+        output.pop();
+        output.pop();
+        let _ = writeln!(output, "];");
     }
 
     let mut old_output = String::new();
