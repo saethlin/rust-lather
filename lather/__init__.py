@@ -36,7 +36,18 @@ class Simulation:
         return rv, bisectors
 
 
-def compute_bisector(rv, ccf, size=1000):
+def compute_bisector(ccf, size=1000):
+    '''
+    Compute the line bisector values for a given Lather CCF
+
+    The CCF values for the returned bisector are arbitrary in some sense but can be safely treated as np.linspace(0.0, 1.0, size)
+    But keep in mind some papers quote line bisectors with the top and bottom 10% removed, and use these bisectors to calculate the bisector inverse slope
+    '''
+    ccf = ccf.copy()
+    ccf *= -1
+    ccf -= ccf.min()
+    ccf /= ccf.max()
+    rv = np.linspace(-2e4, 2e4, 401)
     # Split into red and blue parts
     indmax = ccf.argmax()
     red_ccf = ccf[indmax:][::-1]
@@ -44,23 +55,22 @@ def compute_bisector(rv, ccf, size=1000):
     blue_ccf = ccf[:indmax]
     blue_rv = rv[:indmax]
 
-    red_mask = (red_ccf < 0.9) & (red_ccf > 0.1)
+    red_mask = red_ccf > 0.025
     red_ccf = red_ccf[red_mask]
     red_rv = red_rv[red_mask]
 
-    blue_mask = (blue_ccf < 0.9) & (blue_ccf > 0.1)
+    blue_mask = blue_ccf > 0.025
     blue_ccf = blue_ccf[blue_mask]
     blue_rv = blue_rv[blue_mask]
 
     # Build spline coefficients for interpolation
     ccf_eval = np.linspace(0.0, 1.0, size)
-    try:
-        red_tck = scipy.interpolate.splrep(red_ccf, red_rv)
-        blue_tck = scipy.interpolate.splrep(blue_ccf, blue_rv)
-        bisector = (scipy.interpolate.splev(ccf_eval, red_tck) +
-                    scipy.interpolate.splev(ccf_eval, blue_tck)) / 2
-    except (ValueError, TypeError):
-        bisector = ccf_eval * np.nan
+
+    red_tck = scipy.interpolate.splrep(red_ccf, red_rv)
+    blue_tck = scipy.interpolate.splrep(blue_ccf, blue_rv)
+
+    bisector = (scipy.interpolate.splev(ccf_eval, red_tck) +
+                scipy.interpolate.splev(ccf_eval, blue_tck)) / 2
 
     return bisector
 
