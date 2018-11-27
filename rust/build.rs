@@ -1,12 +1,11 @@
 extern crate cbindgen;
 
-use std::env;
 use std::fmt::Write;
 use std::fs::File;
 use std::io::Read;
 
 fn main() {
-    let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let mut config = cbindgen::Config::default();
     config.language = cbindgen::Language::C;
     if let Ok(bindings) = cbindgen::generate_with_config(&crate_dir, config) {

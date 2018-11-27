@@ -1,13 +1,22 @@
 extern crate lather;
 extern crate png;
+extern crate rayon;
+
 use lather::{linspace, Simulation};
 use png::HasParameters;
+use rayon::prelude::*;
+use std::sync::{Arc, Mutex};
 
 fn main() {
-    let mut sim = Simulation::sun();
-    for (t, time) in linspace(0.0, 100.0, 100).enumerate() {
-        save_png(&sim.draw_rgba(time), &format!("{:04}.png", t));
-    }
+    let sim = Arc::new(Mutex::new(Simulation::sun()));
+    linspace(0.0, 100.0, 100)
+        .enumerate()
+        .collect::<Vec<(usize, f64)>>()
+        .par_iter()
+        .for_each(|(t, time)| {
+            let image = sim.lock().unwrap().draw_rgba(*time);
+            save_png(&image, &format!("{:04}.png", t));
+        });
 }
 
 fn save_png(image: &[u8], filename: &str) {

@@ -1,4 +1,3 @@
-use itertools::cons_tuples;
 use std::f64::consts;
 use std::sync::Arc;
 
@@ -16,10 +15,7 @@ pub struct SpotConfig {
 }
 
 /// A circular starspot
-#[derive(Derivative)]
-#[derivative(Debug)]
 pub struct Spot {
-    #[derivative(Debug = "ignore")]
     pub star: Arc<Star>,
     pub latitude: f64,
     pub longitude: f64,
@@ -28,6 +24,20 @@ pub struct Spot {
     pub plage: bool,
     pub mortality: Mortality,
     pub intensity: f64,
+}
+
+impl std::fmt::Debug for Spot {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("Spot")
+            .field("latitidue", &self.latitude)
+            .field("longitude", &self.longitude)
+            .field("radius", &self.radius)
+            .field("temperature", &self.temperature)
+            .field("plage", &self.plage)
+            .field("mortality", &self.mortality)
+            .field("intensity", &self.intensity)
+            .finish()
+    }
 }
 
 #[derive(Debug)]
@@ -104,12 +114,11 @@ impl Spot {
 
                 if let Some(z_bounds) = bounds.z_bounds(y, &mut current_z_bounds) {
                     let limb_integral = self.star.limb_integral(&z_bounds, y);
-                    for (tot, qshift, ashift) in cons_tuples(
-                        profile
-                            .iter_mut()
-                            .zip(quiet_shifted.iter())
-                            .zip(active_shifted.iter()),
-                    ) {
+                    for ((tot, qshift), ashift) in profile
+                        .iter_mut()
+                        .zip(quiet_shifted.iter())
+                        .zip(active_shifted.iter())
+                    {
                         *tot += (qshift - self.intensity * ashift) * limb_integral;
                     }
                 }

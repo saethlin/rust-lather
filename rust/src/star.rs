@@ -5,7 +5,6 @@ use bounds::Bounds;
 use fit_rv::fit_rv;
 use linspace::linspace;
 use profile::Profile;
-use rayon::prelude::*;
 
 static SOLAR_RADIUS: f64 = 6.96e8;
 static DAYS_TO_SECONDS: f64 = 86400.0;
@@ -24,8 +23,6 @@ pub struct StarConfig {
 }
 
 /// A star that can host spots
-#[derive(Derivative)]
-#[derivative(Debug)]
 pub struct Star {
     pub period: f64,
     pub inclination: f64,
@@ -38,12 +35,27 @@ pub struct Star {
     pub zero_rv: f64,
     pub equatorial_velocity: f64,
     pub minimum_fill_factor: f64,
-    #[derivative(Debug = "ignore")]
     pub integrated_ccf: Vec<f64>,
-    #[derivative(Debug = "ignore")]
     pub profile_spot: Profile,
-    #[derivative(Debug = "ignore")]
     pub profile_quiet: Profile,
+}
+
+impl std::fmt::Debug for Star {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("Star")
+            .field("period", &self.period)
+            .field("inclination", &self.inclination)
+            .field("temperature", &self.temperature)
+            .field("spot_temp_diff", &self.spot_temp_diff)
+            .field("limb_linear", &self.limb_linear)
+            .field("limb_quadratic", &self.limb_quadratic)
+            .field("grid_size", &self.grid_size)
+            .field("flux_quiet", &self.flux_quiet)
+            .field("zero_rv", &self.zero_rv)
+            .field("equatorial_velocity", &self.equatorial_velocity)
+            .field("minimum_fill_factor", &self.minimum_fill_factor)
+            .finish()
+    }
 }
 
 impl Star {
@@ -105,29 +117,23 @@ impl Star {
     }
 
     pub fn draw_rgba(&self) -> Vec<u8> {
-        let vecs: Vec<Vec<u8>> = linspace(-1.0, 1.0, 1000)
-            .collect::<Vec<_>>()
-            .par_iter()
-            .map(|y| {
-                let mut row = Vec::with_capacity(4000);
-                for z in linspace(1.0, -1.0, 1000) {
-                    let intensity = if (y.powi(2) + z.powi(2)) <= 1.0 {
-                        let x = f64::max(0.0, 1.0 - (z.powi(2) + y.powi(2)));
-                        self.limb_brightness(x)
-                    } else {
-                        0.0
-                    };
-                    row.push((intensity * 255.) as u8);
-                    row.push((intensity * 157.) as u8);
-                    row.push((intensity * 63.) as u8);
-                    row.push(255);
-                }
-                row
-            }).collect();
+        let mut output = Vec::with_capacity(4 * 1000 * 1000);
+        for z in linspace(1.0, -1.0, 1000) {
+            for y in linspace(1.0, -1.0, 1000) {
+                let intensity = if (y.powi(2) + z.powi(2)) <= 1.0 {
+                    let x = f64::max(0.0, 1.0 - (z.powi(2) + y.powi(2)));
+                    self.limb_brightness(x)
+                } else {
+                    0.0
+                };
+                output.push((intensity * 255.) as u8);
+                output.push((intensity * 157.) as u8);
+                output.push((intensity * 63.) as u8);
+                output.push(255);
+            }
+        }
 
-        vecs.iter()
-            .flat_map(|c| c.iter().cloned())
-            .collect::<Vec<u8>>()
+        output
     }
 }
 

@@ -20,13 +20,19 @@ pub struct Observation {
 }
 
 /// A model of a star with spots that can be observed.
-#[derive(Derivative)]
-#[derivative(Debug)]
 pub struct Simulation {
     star: Arc<Star>,
     spots: Vec<Spot>,
-    #[derivative(Debug = "ignore")]
     generator: Arc<Mutex<StdRng>>,
+}
+
+impl std::fmt::Debug for Simulation {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("Simulation")
+            .field("star", &self.star)
+            .field("spots", &self.spots)
+            .finish()
+    }
 }
 
 #[derive(Deserialize, Serialize)]
@@ -269,8 +275,13 @@ impl Simulation {
 
         self.check_fill_factor(time);
         let star_intensity = planck_integral(self.star.temperature, 4000e-10, 7000e-10);
+        let spot_intensity = planck_integral(
+            self.star.temperature - self.star.spot_temp_diff,
+            4000e-10,
+            7000e-10,
+        ) / star_intensity;
         for spot in &mut self.spots {
-            spot.intensity = planck_integral(spot.temperature, 4000e-10, 7000e-10) / star_intensity;
+            spot.intensity = spot_intensity;
         }
 
         let grid_interval = 2.0 / self.star.grid_size as f64;

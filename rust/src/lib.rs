@@ -3,17 +3,14 @@
 //!
 //! This project was inspired by a desire to improve upon the
 //! starspot modeling library named SOAP.
-
-#[macro_use]
-extern crate derivative;
 #[cfg(feature = "simd")]
 extern crate faster;
-extern crate itertools;
 extern crate quadrature;
 extern crate rand;
 extern crate rayon;
 extern crate rulinalg;
 #[macro_use]
+extern crate serde_derive;
 extern crate serde;
 extern crate toml;
 
