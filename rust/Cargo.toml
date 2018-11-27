@@ -18,10 +18,10 @@ categories = ["science", "simulation"]
 experimental = []
 
 [dependencies]
-rand = "0.5"
+rand = "0.6"
 quadrature = "0.1"
 rulinalg = "0.4"
-png = "0.12"
+png = "0.13"
 rayon = "1.0"
 serde = "1.0"
 serde_derive = "1.0"
@@ -35,7 +35,7 @@ crate-type = ["cdylib", "rlib"]
 cbindgen = "0.6"
 
 [dev-dependencies]
-criterion = "0.2"
+criterion = {version = "0.2", default-features = false}
 
 [[bench]]
 name = "bench_rv"
