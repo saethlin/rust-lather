@@ -1,0 +1,21 @@
+# This example config is a very close reproduction of the configs for SOAP-2.0
+[star]
+grid_size           = 1000     # Grid resolution NxN (integer)
+radius              = 1.0     # Stellar radius [Rsun]
+period              = 25.05   # Rotation period [day] 25.05 for the Sun, from Planetary Fact Sheets, NASA, see [1]
+inclination         = 90.0    # Stellar inclination angle [degree], 0 degree: pole on (North), 90 degrees: equator on
+temperature         = 5778    # Effective temperature of the star, 5778 for the Sun, from Planetary Fact Sheets, NASA, see [1] (integer)
+spot_temp_diff      = 663     # difference in temperature between the star effective temperature and the spot temperature, 663 for the Sun [2] (integer)
+limb_linear         = 0.29    # linear limb darkening coefficient (can be obtained from [3]). 0.29 for the Sun ([4],[3])
+limb_quadratic      = 0.34    # quadratic limb darkening coefficient (can be obtained from [3]). 0.34 for the Sun ([4],[3])
+minimum_fill_factor = 0.01    # Minimum total fill factor for the star, which is dynamically maintained over a simulation
+latitude_distribution = {name = "uniform", params = [0.0, 30.0]}
+
+[star.lifetime_distribution]
+name = "uniform"
+params = [1.0, 2.0] # unrealistically short
+
+#[1] http://nssdc.gsfc.nasa.gov/planetary/planetfact.html
+#[2] Meunier et al. 2010
+#[3] Claret & Bloemen 2011
+#[4] Oshagh et al 2013
