@@ -29,7 +29,7 @@ void simulation_free(Simulation *sim);
 /*
  * Build a simulation from a path to a config file
  */
-Simulation *simulation_new(const char *filename);
+Simulation *simulation_new(const char *filename, const char **error);
 
 /*
  * Observe the flux of a simulation at given time values in days

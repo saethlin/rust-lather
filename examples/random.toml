@@ -9,11 +9,13 @@ spot_temp_diff      = 663     # difference in temperature between the star effec
 limb_linear         = 0.29    # linear limb darkening coefficient (can be obtained from [3]). 0.29 for the Sun ([4],[3])
 limb_quadratic      = 0.34    # quadratic limb darkening coefficient (can be obtained from [3]). 0.34 for the Sun ([4],[3])
 minimum_fill_factor = 0.01    # Minimum total fill factor for the star, which is dynamically maintained over a simulation
-latitude_distribution = {name = "uniform", params = [0.0, 30.0]}
+
+latitude_distribution = {name = "uniform", min = 0.0, max = 30.0}
 
 [star.lifetime_distribution]
 name = "uniform"
-params = [1.0, 2.0] # unrealistically short
+min = 0.0
+max = 30.0
 
 #[1] http://nssdc.gsfc.nasa.gov/planetary/planetfact.html
 #[2] Meunier et al. 2010

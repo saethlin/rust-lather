@@ -101,31 +101,22 @@ impl Simulation {
     }
 
     /// Construct a new Star from a TOML file.
-    pub fn from_config(config_path: &str) -> Simulation {
-        use std::fs::File;
-        use std::io::Read;
+    pub fn from_config(config_path: &str) -> Result<Simulation, String> {
+        let contents = std::fs::read_to_string(config_path).map_err(|_| {
+            format!(
+                "Tried to open a config file at {:?}, but it doesn't seem to exist",
+                config_path
+            )
+        })?;
 
-        let mut contents = String::new();
-        File::open(&config_path)
-            .unwrap_or_else(|_| {
-                panic!(
-                    "Tried to open a config file at {:?}, but it doesn't seem to exist",
-                    config_path
-                );
-            })
-            .read_to_string(&mut contents)
-            .unwrap_or_else(|_| {
-                panic!("Unable to read config file at {:?}", &config_path);
-            });
-
-        let config: Config = ::toml::from_str(&contents).unwrap_or_else(|_| {
-            println!(
-                "{:?} is not a valid config file. Here's an example:\n",
-                &config_path
-            );
-            println!("{}", ::toml::to_string_pretty(&Config::example()).unwrap());
-            panic!();
-        });
+        let config: Config = ::toml::from_str(&contents).map_err(|e| {
+            format!(
+                "{:?} is not a valid config file. Here's an example:\n{}\nThe internal error was: {}",
+                &config_path,
+                ::toml::to_string_pretty(&Config::example()).unwrap(),
+                e
+            )
+        })?;
 
         let mut sim = Simulation {
             star: Arc::new(Star::from_config(&config.star)),
@@ -140,7 +131,7 @@ impl Simulation {
             }
         }
 
-        sim
+        Ok(sim)
     }
 
     pub fn add_spot(&mut self, config: &SpotConfig) {

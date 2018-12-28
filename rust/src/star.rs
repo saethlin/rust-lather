@@ -30,21 +30,23 @@ impl Distribution {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
-pub struct DistributionConfig {
-    name: String,
-    params: Option<Vec<f64>>,
+#[serde(rename_all = "snake_case")]
+#[serde(tag = "name")]
+pub enum DistributionConfig {
+    StandardNormal,
+    LogNormal { mean: f64, std_dev: f64 },
+    Uniform { min: f64, max: f64 },
 }
 
 impl From<DistributionConfig> for Distribution {
     fn from(c: DistributionConfig) -> Distribution {
-        let params = c.params.unwrap_or_default();
-        match c.name.to_lowercase().as_str() {
-            "standard normal" | "normal" => Distribution::StandardNormal(StandardNormal),
-            "lognormal" => Distribution::LogNormal(LogNormal::new(params[0], params[1])),
-            "uniform" => Distribution::Uniform(Uniform::new(params[0], params[1])),
-            _ => {
-                println!("Invalid distribution name: {}", c.name);
-                panic!();
+        match c {
+            DistributionConfig::StandardNormal => Distribution::StandardNormal(StandardNormal),
+            DistributionConfig::LogNormal { mean, std_dev } => {
+                Distribution::LogNormal(LogNormal::new(mean, std_dev))
+            }
+            DistributionConfig::Uniform { min, max } => {
+                Distribution::Uniform(Uniform::new(min, max))
             }
         }
     }

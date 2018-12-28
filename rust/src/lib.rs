@@ -37,11 +37,32 @@ use std::os::raw::c_char;
 
 /// Build a simulation from a path to a config file
 #[no_mangle]
-pub unsafe extern "C" fn simulation_new(filename: *const c_char) -> *mut Simulation {
-    let obj = Box::new(Simulation::from_config(
-        CStr::from_ptr(filename).to_str().unwrap(),
-    ));
-    Box::into_raw(obj)
+pub unsafe extern "C" fn simulation_new(
+    filename: *const c_char,
+    error: *mut *const c_char,
+) -> *mut Simulation {
+    let filename = match CStr::from_ptr(filename).to_str() {
+        Ok(v) => v,
+        Err(_) => {
+            let error_message = CString::new("Filename ust be valid UTF-8").unwrap();
+            *error = error_message.as_ptr() as *mut c_char;
+            std::mem::forget(error_message);
+            return std::ptr::null_mut();
+        }
+    };
+
+    match Simulation::from_config(filename) {
+        Ok(v) => {
+            let obj = Box::new(v);
+            Box::into_raw(obj)
+        }
+        Err(e) => {
+            let error_message = CString::new(e).unwrap();
+            *error = error_message.as_ptr() as *mut c_char;
+            std::mem::forget(error_message);
+            std::ptr::null_mut()
+        }
+    }
 }
 
 /// Close down a simulation

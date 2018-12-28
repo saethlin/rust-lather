@@ -5,7 +5,12 @@ from lather._native import ffi, lib
 
 class Simulation:
     def __init__(self, filename):
-        self._native = lib.simulation_new(filename.encode())
+        error_ptr = ffi.new("char **")
+        self._native = lib.simulation_new(filename.encode(), error_ptr)
+
+        if self._native == ffi.NULL:
+            error = ffi.string(error_ptr[0]).decode('utf-8')
+            raise RuntimeError(error)
 
     def __repr__(self):
         return ffi.string(lib.simulation_tostring(self._native)).decode('utf-8')
