@@ -14,7 +14,7 @@ categories = ["science", "simulation"]
 
 [features]
 # SIMD stuff commented-out until Rust 2018 ships
-#simd = ["faster"]
+simd = ["faster"]
 experimental = []
 
 [dependencies]
@@ -26,13 +26,10 @@ rayon = "1.0"
 serde = "1.0"
 serde_derive = "1.0"
 toml = "0.4"
-#faster = {git="https://github.com/AdamNiederer/faster", optional=true}
+faster = {git="https://github.com/AdamNiederer/faster", optional=true}
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-
-[build-dependencies]
-cbindgen = "0.6"
 
 [dev-dependencies]
 criterion = {version = "0.2", default-features = false}

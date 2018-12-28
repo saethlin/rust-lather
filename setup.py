@@ -10,7 +10,7 @@ def build_native(spec):
     spec.add_cffi_module(
         module_path='lather._native',
         dylib=lambda: build.find_dylib('lather', in_path='target/release'),
-        header_filename=lambda: build.find_header('lather.h', in_path='target'),
+        header_filename=lambda: build.find_header('lather.h'),
         rtld_flags=['NOW', 'NODELETE']
     )
 

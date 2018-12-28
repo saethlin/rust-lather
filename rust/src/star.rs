@@ -6,8 +6,49 @@ use fit_rv::fit_rv;
 use linspace::linspace;
 use profile::Profile;
 
+use rand::distributions::{LogNormal, StandardNormal, Uniform};
+use rand::Rng;
+
 static SOLAR_RADIUS: f64 = 6.96e8;
 static DAYS_TO_SECONDS: f64 = 86400.0;
+
+#[derive(Debug)]
+pub enum Distribution {
+    StandardNormal(StandardNormal),
+    LogNormal(LogNormal),
+    Uniform(Uniform<f64>),
+}
+
+impl Distribution {
+    pub fn sample(&self, rng: &mut rand::rngs::StdRng) -> f64 {
+        match self {
+            Distribution::StandardNormal(ref inner) => rng.sample(inner),
+            Distribution::LogNormal(ref inner) => rng.sample(inner),
+            Distribution::Uniform(ref inner) => rng.sample(inner),
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct DistributionConfig {
+    name: String,
+    params: Option<Vec<f64>>,
+}
+
+impl From<DistributionConfig> for Distribution {
+    fn from(c: DistributionConfig) -> Distribution {
+        let params = c.params.unwrap_or_default();
+        match c.name.to_lowercase().as_str() {
+            "standard normal" | "normal" => Distribution::StandardNormal(StandardNormal),
+            "lognormal" => Distribution::LogNormal(LogNormal::new(params[0], params[1])),
+            "uniform" => Distribution::Uniform(Uniform::new(params[0], params[1])),
+            _ => {
+                println!("Invalid distribution name: {}", c.name);
+                panic!();
+            }
+        }
+    }
+}
 
 #[derive(Deserialize, Serialize)]
 pub struct StarConfig {
@@ -20,6 +61,10 @@ pub struct StarConfig {
     pub limb_linear: f64,
     pub limb_quadratic: f64,
     pub minimum_fill_factor: f64,
+    pub latitude_distribution: Option<DistributionConfig>,
+    pub longitude_distribution: Option<DistributionConfig>,
+    pub fillfactor_distribution: Option<DistributionConfig>,
+    pub lifetime_distribution: Option<DistributionConfig>,
 }
 
 /// A star that can host spots
@@ -38,6 +83,10 @@ pub struct Star {
     pub integrated_ccf: Vec<f64>,
     pub profile_spot: Profile,
     pub profile_quiet: Profile,
+    pub latitude_distribution: Distribution,
+    pub longitude_distribution: Distribution,
+    pub fillfactor_distribution: Distribution,
+    pub lifetime_distribution: Distribution,
 }
 
 impl std::fmt::Debug for Star {
@@ -54,6 +103,10 @@ impl std::fmt::Debug for Star {
             .field("zero_rv", &self.zero_rv)
             .field("equatorial_velocity", &self.equatorial_velocity)
             .field("minimum_fill_factor", &self.minimum_fill_factor)
+            .field("latitude_distribution", &self.latitude_distribution)
+            .field("longitude_distribution", &self.longitude_distribution)
+            .field("fillfactor_distribution", &self.fillfactor_distribution)
+            .field("lifetime_distribution", &self.lifetime_distribution)
             .finish()
     }
 }
@@ -90,6 +143,30 @@ impl Star {
             flux_quiet += limb_integral;
         }
 
+        let latitude_distribution = config
+            .latitude_distribution
+            .clone()
+            .map(|c| Distribution::from(c))
+            .unwrap_or_else(|| Distribution::Uniform(Uniform::new(-30.0, 30.0)));
+
+        let longitude_distribution = config
+            .longitude_distribution
+            .clone()
+            .map(|c| Distribution::from(c))
+            .unwrap_or_else(|| Distribution::Uniform(Uniform::new(0.0, 360.0)));
+
+        let fillfactor_distribution = config
+            .fillfactor_distribution
+            .clone()
+            .map(|c| Distribution::from(c))
+            .unwrap_or_else(|| Distribution::LogNormal(LogNormal::new(0.5, 4.0)));
+
+        let lifetime_distribution = config
+            .lifetime_distribution
+            .clone()
+            .map(|c| Distribution::from(c))
+            .unwrap_or_else(|| Distribution::Uniform(Uniform::new(10.0, 20.0)));
+
         Star {
             period: config.period,
             inclination: config.inclination * consts::PI / 180.0,
@@ -105,6 +182,10 @@ impl Star {
             integrated_ccf,
             profile_spot: Profile::new(::solar_ccfs::RV.to_vec(), ::solar_ccfs::CCF_SPOT.to_vec()),
             profile_quiet,
+            latitude_distribution,
+            longitude_distribution,
+            fillfactor_distribution,
+            lifetime_distribution,
         }
     }
 

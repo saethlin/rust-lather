@@ -79,14 +79,16 @@ impl Spot {
                 y_bounds.lower,
                 y_bounds.upper,
                 2.0 / self.star.grid_size as f64,
-            ).map(|y| {
+            )
+            .map(|y| {
                 // TODO I should be able to filter_map here
                 if let Some(z_bounds) = bounds.z_bounds(y, &mut current_z_bounds) {
                     self.star.limb_integral(&z_bounds, y)
                 } else {
                     0.0
                 }
-            }).sum();
+            })
+            .sum();
             (1.0 - self.intensity) * limb_integral
         } else {
             0.0

@@ -122,7 +122,8 @@ impl Profile {
                         .zip(self.derivative.iter())
                         .take(self.ccf.len() - quotient as usize)
                         .map(|(ccf, der)| ccf - remainder * der),
-                ).zip(output.iter_mut())
+                )
+                .zip(output.iter_mut())
                 .for_each(|(shifted, output)| *output = shifted)
         } else {
             self.ccf

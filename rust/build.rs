@@ -1,20 +1,12 @@
-extern crate cbindgen;
-
 use std::fmt::Write;
 use std::fs::File;
 use std::io::Read;
 
 fn main() {
-    let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let mut config = cbindgen::Config::default();
-    config.language = cbindgen::Language::C;
-    if let Ok(bindings) = cbindgen::generate_with_config(&crate_dir, config) {
-        bindings.write_to_file("target/lather.h");
-    }
-
     let ccf_file = std::fs::read_to_string(
         "resources/CCF_solar_spectrum_G2_FTS_reso_not_evenly_sampled_in_freq.rdb",
-    ).unwrap();
+    )
+    .unwrap();
 
     let mut rv = Vec::new();
     let mut ccf_quiet = Vec::new();

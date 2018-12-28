@@ -41,7 +41,8 @@ impl BoundingShape {
             x: phi.sin() * theta.cos(),
             y: phi.sin() * theta.sin(),
             z: phi.cos(),
-        }.rotated_y(spot.star.inclination - consts::FRAC_PI_2);
+        }
+        .rotated_y(spot.star.inclination - consts::FRAC_PI_2);
 
         let depth = (1.0 - radius.powi(2)).sqrt();
         let circle_radius = (radius.powi(2) - (1.0 - depth).powi(2)).sqrt();
@@ -156,14 +157,16 @@ impl BoundingShape {
                 guess.upper,
                 self.center.z - self.radius,
                 -self.grid_interval / 1.0,
-            ).find(|z| self.on_spot(y, *z))
+            )
+            .find(|z| self.on_spot(y, *z))
         } else {
             // Guess must be below the edge, walk up until not on it
             floatrange(
                 guess.upper,
                 self.center.z + self.radius,
                 self.grid_interval / 1.0,
-            ).find(|z| !self.on_spot(y, *z))
+            )
+            .find(|z| !self.on_spot(y, *z))
         };
 
         let z_min = if !self.on_spot(y, guess.lower) {
@@ -172,14 +175,16 @@ impl BoundingShape {
                 guess.lower,
                 self.center.z + self.radius,
                 self.grid_interval / 1.0,
-            ).find(|z| self.on_spot(y, *z))
+            )
+            .find(|z| self.on_spot(y, *z))
         } else {
             // Guess must be above the edge, walk down until not on it
             floatrange(
                 guess.lower,
                 self.center.z - self.radius,
                 -self.grid_interval / 1.0,
-            ).find(|z| !self.on_spot(y, *z))
+            )
+            .find(|z| !self.on_spot(y, *z))
         };
 
         // NOTE: This function used to have a special case for if the edges of a spot
@@ -198,13 +203,15 @@ impl BoundingShape {
             self.center.z + self.radius,
             self.center.z - self.radius,
             -self.grid_interval / 1.0,
-        ).find(|z| self.on_spot(y, *z));
+        )
+        .find(|z| self.on_spot(y, *z));
 
         let z_min = floatrange(
             self.center.z - self.radius,
             self.center.z + self.radius,
             self.grid_interval / 1.0,
-        ).find(|z| self.on_spot(y, *z));
+        )
+        .find(|z| self.on_spot(y, *z));
 
         if z_max.is_none() || z_min.is_none() {
             None
@@ -228,7 +235,8 @@ impl BoundingShape {
     pub fn collides_with(&self, other: &BoundingShape) -> bool {
         let distance = ((self.center.x - other.center.x).powi(2)
             + (self.center.y - other.center.y).powi(2)
-            + (self.center.z - other.center.z).powi(2)).sqrt();
+            + (self.center.z - other.center.z).powi(2))
+        .sqrt();
         distance < (self.max_radius + other.max_radius)
     }
 }

@@ -1,9 +1,7 @@
 use fit_rv::fit_rv;
 use planck::planck_integral;
-use rand::distributions::{LogNormal, Uniform};
 use rand::prelude::*;
 use rayon::prelude::*;
-use std::iter;
 use std::sync::{Arc, Mutex};
 
 use bounds::Bounds;
@@ -55,6 +53,10 @@ impl Config {
                 limb_linear: 0.29,
                 limb_quadratic: 0.34,
                 minimum_fill_factor: 0.00,
+                latitude_distribution: None,
+                longitude_distribution: None,
+                fillfactor_distribution: None,
+                lifetime_distribution: None,
             },
             spots: Some(vec![
                 SpotConfig {
@@ -88,6 +90,10 @@ impl Simulation {
                 limb_linear: 0.29,
                 limb_quadratic: 0.34,
                 minimum_fill_factor: 0.01,
+                latitude_distribution: None,
+                longitude_distribution: None,
+                fillfactor_distribution: None,
+                lifetime_distribution: None,
             })),
             spots: Vec::new(),
             generator: Arc::new(Mutex::new(StdRng::seed_from_u64(0x0123456789ABCDEFu64))),
@@ -106,7 +112,8 @@ impl Simulation {
                     "Tried to open a config file at {:?}, but it doesn't seem to exist",
                     config_path
                 );
-            }).read_to_string(&mut contents)
+            })
+            .read_to_string(&mut contents)
             .unwrap_or_else(|_| {
                 panic!("Unable to read config file at {:?}", &config_path);
             });
@@ -153,50 +160,46 @@ impl Simulation {
             .map(|s| (s.radius * s.radius) / 2.0)
             .sum::<f64>();
 
-        let fill_range = LogNormal::new(0.5, 4.0);
-        let lat_range = Uniform::new(-30.0, 30.0);
-        let long_range = Uniform::new(0.0, 360.0);
-        let lifetime_range = Uniform::new(10.0, 20.0);
+        let mut generator = self
+            .generator
+            .lock()
+            .expect("Simulation RNG lock was poisoned by another panic");
 
-        if current_fill_factor < self.star.minimum_fill_factor {
-            let mut generator = self
-                .generator
-                .lock()
-                .expect("Simulation RNG lock was poisoned by another panic");
-
-            while current_fill_factor < self.star.minimum_fill_factor {
-                let new_fill_factor = iter::repeat(())
-                    .map(|_| fill_range.sample(&mut *generator) * 9.4e-6)
-                    .find(|v| *v < 0.001)
-                    .unwrap();
-
-                let mut new_spot = Spot::from_config(
-                    self.star.clone(),
-                    &SpotConfig {
-                        latitude: lat_range.sample(&mut *generator),
-                        longitude: long_range.sample(&mut *generator),
-                        fill_factor: new_fill_factor,
-                        plage: false,
-                    },
-                );
-                new_spot.mortality = Mortal(Bounds::new(
-                    time,
-                    time + lifetime_range.sample(&mut *generator),
-                ));
-
-                // TODO: This collision checking might be subpar
-                let new_appear = time;
-                let new_disappear = time + 15.0;
-                let collides = self
-                    .spots
-                    .iter()
-                    .filter(|s| s.alive(new_appear) || s.alive(new_disappear))
-                    .any(|s| new_spot.collides_with(s));
-
-                if !collides {
-                    current_fill_factor += (new_spot.radius * new_spot.radius) / 2.0;
-                    self.spots.push(new_spot);
+        while current_fill_factor < self.star.minimum_fill_factor {
+            let new_fill_factor = loop {
+                let possible_value =
+                    self.star.fillfactor_distribution.sample(&mut *generator) * 9.4e-6;
+                if possible_value < 0.001 {
+                    break possible_value;
                 }
+            };
+
+            let mut new_spot = Spot::from_config(
+                self.star.clone(),
+                &SpotConfig {
+                    latitude: self.star.latitude_distribution.sample(&mut *generator),
+                    longitude: self.star.longitude_distribution.sample(&mut *generator),
+                    fill_factor: new_fill_factor,
+                    plage: false,
+                },
+            );
+            new_spot.mortality = Mortal(Bounds::new(
+                time,
+                time + self.star.lifetime_distribution.sample(&mut *generator),
+            ));
+
+            // TODO: This collision checking might be subpar
+            let new_appear = time;
+            let new_disappear = time + 15.0;
+            let collides = self
+                .spots
+                .iter()
+                .filter(|s| s.alive(new_appear) || s.alive(new_disappear))
+                .any(|s| new_spot.collides_with(s));
+
+            if !collides {
+                current_fill_factor += (new_spot.radius * new_spot.radius) / 2.0;
+                self.spots.push(new_spot);
             }
         }
     }
@@ -224,7 +227,8 @@ impl Simulation {
                     .map(|s| s.get_flux(*t))
                     .sum();
                 (self.star.flux_quiet - spot_flux) / self.star.flux_quiet
-            }).collect()
+            })
+            .collect()
     }
 
     /// Computes the radial velocity and line bisector of this system at each time (in days),
@@ -261,7 +265,8 @@ impl Simulation {
                     rv,
                     ccf: spot_profile,
                 }
-            }).collect()
+            })
+            .collect()
     }
 
     /// Draw the simulation in a row-major fashion, as it would be seen in the visible
@@ -275,13 +280,8 @@ impl Simulation {
 
         self.check_fill_factor(time);
         let star_intensity = planck_integral(self.star.temperature, 4000e-10, 7000e-10);
-        let spot_intensity = planck_integral(
-            self.star.temperature - self.star.spot_temp_diff,
-            4000e-10,
-            7000e-10,
-        ) / star_intensity;
         for spot in &mut self.spots {
-            spot.intensity = spot_intensity;
+            spot.intensity = planck_integral(spot.temperature, 4000e-10, 7000e-10) / star_intensity;
         }
 
         let grid_interval = 2.0 / self.star.grid_size as f64;

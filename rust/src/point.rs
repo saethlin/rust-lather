@@ -51,7 +51,8 @@ mod tests {
             x: 1.0,
             y: 1.0,
             z: 1.0,
-        }.rotated_x(consts::FRAC_PI_4);
+        }
+        .rotated_x(consts::FRAC_PI_4);
         assert_eq!(point.x, 1.0);
         assert!(is_close(point.y, 0.0));
         assert!(is_close(point.z, consts::SQRT_2));
@@ -63,7 +64,8 @@ mod tests {
             x: 1.0,
             y: 1.0,
             z: 1.0,
-        }.rotated_y(consts::FRAC_PI_4);
+        }
+        .rotated_y(consts::FRAC_PI_4);
         assert!(is_close(point.x, consts::SQRT_2));
         assert_eq!(point.y, 1.0);
         assert!(is_close(point.z, 0.0));
@@ -75,7 +77,8 @@ mod tests {
             x: 1.0,
             y: 1.0,
             z: 1.0,
-        }.rotated_z(consts::FRAC_PI_4);
+        }
+        .rotated_z(consts::FRAC_PI_4);
         assert!(is_close(point.x, 0.0));
         assert!(is_close(point.y, consts::SQRT_2));
         assert_eq!(point.z, 1.0);
