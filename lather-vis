@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+import os.path
+import subprocess
+import sys
+cmd = os.path.join(os.path.dirname(__file__), "../../rust/target/release/display")
+subprocess.call([cmd] + sys.argv[1:])
