@@ -35,6 +35,7 @@ pub use spot::SpotConfig;
 
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
+use std::path::Path;
 
 /// Build a simulation from a path to a config file
 #[no_mangle]
@@ -52,7 +53,7 @@ pub unsafe extern "C" fn simulation_new(
         }
     };
 
-    match Simulation::from_config(filename) {
+    match Simulation::from_config(&Path::new(filename)) {
         Ok(v) => {
             let obj = Box::new(v);
             Box::into_raw(obj)

@@ -2,6 +2,7 @@ use fit_rv::fit_rv;
 use planck::planck_integral;
 use rand::prelude::*;
 use rayon::prelude::*;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use bounds::Bounds;
@@ -114,7 +115,7 @@ impl Simulation {
     }
 
     /// Construct a new Star from a TOML file.
-    pub fn from_config(config_path: &str) -> Result<Simulation, String> {
+    pub fn from_config(config_path: &Path) -> Result<Simulation, String> {
         let contents = std::fs::read_to_string(config_path).map_err(|_| {
             format!(
                 "Tried to open a config file at {:?}, but it doesn't seem to exist",

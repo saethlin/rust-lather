@@ -13,8 +13,8 @@ use structopt::StructOpt;
 #[structopt(name = "Lather visualizer")]
 struct Opt {
     /// Path to a simulation config file to run
-    #[structopt(short = "c", long = "config", parse(from_os_str))]
-    config_path: Option<PathBuf>,
+    #[structopt(parse(from_os_str))]
+    config: PathBuf,
 
     /// Frames per second for the output mp4
     #[structopt(short = "fps", default_value = "60")]
@@ -32,20 +32,18 @@ struct Opt {
 fn main() {
     let opt = Opt::from_args();
 
-    let mut sim = if let Some(config_path) = opt.config_path {
-        Simulation::from_config(config_path.to_str().unwrap()).unwrap()
-    } else {
-        Simulation::sun()
-    };
+    let mut sim = Simulation::from_config(&opt.config).unwrap();
 
-    let times = linspace(
+    let times: Vec<_> = linspace(
         0.0,
         opt.duration.unwrap_or(sim.star.period),
         opt.frames as usize,
     )
     .enumerate()
-    .collect::<Vec<(usize, f64)>>();
+    .collect();
 
+    // Must do this first, or spots get created in strange generations
+    // This really points at a bug in the fill factor maintenance logic
     for (_, time) in &times {
         sim.check_fill_factor(*time);
     }
@@ -58,18 +56,17 @@ fn main() {
 
     // Find a filename that isn't taken
     let mut i = 0;
-    let mut output_path = std::path::PathBuf::from(format!("lather{}.mp4", i));
+    let mut output_path = PathBuf::from(format!("lather{}.mp4", i));
     while output_path.exists() {
         i += 1;
-        output_path = std::path::PathBuf::from(format!("lather{}.mp4", i));
+        output_path = PathBuf::from(format!("lather{}.mp4", i));
     }
 
     // Launch ffmpeg
     let mut command = std::process::Command::new("ffmpeg");
-    let fps_string = opt.fps.to_string();
     let args = [
         "-r",
-        &fps_string,
+        &opt.fps.to_string(),
         "-f",
         "image2",
         "-s",
