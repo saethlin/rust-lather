@@ -11,10 +11,12 @@ pub struct SpotConfig {
     pub latitude: f64,
     pub longitude: f64,
     pub fill_factor: f64,
-    pub plage: bool,
+    pub plage: Option<bool>,
+    pub temperature: Option<f64>,
 }
 
 /// A circular starspot
+#[derive(Clone)]
 pub struct Spot {
     pub star: Arc<Star>,
     pub latitude: f64,
@@ -40,7 +42,7 @@ impl std::fmt::Debug for Spot {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Mortality {
     Immortal,
     Mortal(Bounds),
@@ -57,14 +59,15 @@ impl Spot {
     /// latitude is 0 at the equator and both latitude and longitude are
     /// measured in degrees.
     pub fn from_config(star: Arc<Star>, config: &SpotConfig) -> Spot {
-        let temperature = star.temperature - star.spot_temp_diff;
         Spot {
-            star,
+            star: Arc::clone(&star),
             latitude: config.latitude * consts::PI / 180.0,
             longitude: config.longitude * consts::PI / 180.0,
             radius: (2.0 * config.fill_factor).sqrt(),
-            temperature,
-            plage: config.plage,
+            temperature: config
+                .temperature
+                .unwrap_or(star.temperature - star.spot_temp_diff),
+            plage: config.plage.unwrap_or(false),
             mortality: Mortality::Immortal,
             intensity: 0.0,
         }

@@ -19,6 +19,7 @@ pub struct BoundingShape {
 impl BoundingShape {
     pub fn new(spot: &Spot, time: f64) -> Self {
         let max_radius = spot.radius;
+        // TODO: Dubiously physical spot growth code
         let radius = match spot.mortality {
             Mortality::Immortal => spot.radius,
             Mortality::Mortal(lifetime) => {

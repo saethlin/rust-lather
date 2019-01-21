@@ -1,7 +1,6 @@
 from setuptools import setup
 
 def build_native(spec):
-    # build an example rust library
     build = spec.add_external_build(
         cmd=['cargo', 'build', '--release'],
         path='./rust'
@@ -24,6 +23,8 @@ setup(
     install_requires=['milksnake', 'numpy', 'scipy'],
     milksnake_tasks=[
         build_native
-    ]
+    ],
+    package_data = {'lather': ['../rust/target/release/display']},
+    scripts = ['lather-vis'],
 )
 

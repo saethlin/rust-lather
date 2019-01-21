@@ -1,21 +1,34 @@
 # This example config is a very close reproduction of the configs for SOAP-2.0
 [star]
-grid_size           = 1000     # Grid resolution NxN (integer)
+grid_size           = 1000    # (Notional) grid resolution NxN
 radius              = 1.0     # Stellar radius [Rsun]
-period              = 25.05   # Rotation period [day] 25.05 for the Sun, from Planetary Fact Sheets, NASA, see [1]
-inclination         = 90.0    # Stellar inclination angle [degree], 0 degree: pole on (North), 90 degrees: equator on
-temperature         = 5778    # Effective temperature of the star, 5778 for the Sun, from Planetary Fact Sheets, NASA, see [1] (integer)
-spot_temp_diff      = 663     # difference in temperature between the star effective temperature and the spot temperature, 663 for the Sun [2] (integer)
-limb_linear         = 0.29    # linear limb darkening coefficient (can be obtained from [3]). 0.29 for the Sun ([4],[3])
-limb_quadratic      = 0.34    # quadratic limb darkening coefficient (can be obtained from [3]). 0.34 for the Sun ([4],[3])
-minimum_fill_factor = 0.01    # Minimum total fill factor for the star, which is dynamically maintained over a simulation
+period              = 25.05   # Rotation period [days] 25.05 for the Sun [1]
+inclination         = 90.0    # Stellar inclination angle [degree], 0: pole on (North)
+temperature         = 5778    # Effective temperature of the star [K], 5778 for the Sun [1]
+spot_temp_diff      = 663     # Difference between star and spot effective temp, 663 for the Sun [2]
+limb_linear         = 0.29    # Linear limb darkening coefficient, 0.29 for the Sun ([4],[3])
+limb_quadratic      = 0.34    # Quadratic limb darkening coefficient, 0.34 for the Sun ([4],[3])
+minimum_fill_factor = 0.01    # Try to maintain this fill factor by randomly generating spots
 
-latitude_distribution = {name = "uniform", min = 0.0, max = 30.0}
+[star.latitude_distribution]
+name = "uniform"
+min = -30.0
+max = 30.0
+
+[star.longitude_distribution]
+name = "uniform"
+min = 0
+max = 360
 
 [star.lifetime_distribution]
 name = "uniform"
-min = 0.0
-max = 30.0
+min = 10.0
+max = 20.0
+
+[star.fillfactor_distribution]
+name = "lognormal"
+mean = 0.5
+std_dev = 4.0
 
 #[1] http://nssdc.gsfc.nasa.gov/planetary/planetfact.html
 #[2] Meunier et al. 2010
