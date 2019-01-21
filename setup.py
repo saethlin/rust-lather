@@ -15,7 +15,7 @@ def build_native(spec):
 
 setup(
     name='lather',
-    version='0.0.0',
+    version='0.0.1',
     packages=['lather'],
     zip_safe=False,
     platforms='any',
@@ -24,7 +24,5 @@ setup(
     milksnake_tasks=[
         build_native
     ],
-    package_data = {'lather': ['../rust/target/release/display']},
-    scripts = ['lather-vis'],
 )
 

@@ -31,5 +31,3 @@ plt.plot(bisector, np.linspace(0.0, 1.0, bisector.size))
 plt.title('A lather bisector')
 plt.xlabel('Velocity (m/s)')
 plt.show()
-
-print(sim)

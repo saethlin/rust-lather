@@ -16,6 +16,7 @@ extern crate toml;
 
 mod boundingshape;
 mod bounds;
+mod distributions;
 mod fit_rv;
 mod linspace;
 mod planck;

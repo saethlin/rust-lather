@@ -2,57 +2,15 @@ use std;
 use std::f64::consts;
 
 use bounds::Bounds;
+use distributions::{Distribution, DistributionConfig};
 use fit_rv::fit_rv;
 use linspace::linspace;
 use profile::Profile;
 
-use rand::distributions::{LogNormal, StandardNormal, Uniform};
-use rand::Rng;
+use rand::distributions::{LogNormal, Uniform};
 
 static SOLAR_RADIUS: f64 = 6.96e8;
 static DAYS_TO_SECONDS: f64 = 86400.0;
-
-#[derive(Debug)]
-pub enum Distribution {
-    StandardNormal(StandardNormal),
-    LogNormal(LogNormal),
-    Uniform(Uniform<f64>),
-}
-
-impl Distribution {
-    pub fn sample(&self, rng: &mut rand::rngs::StdRng) -> f64 {
-        match self {
-            Distribution::StandardNormal(ref inner) => rng.sample(inner),
-            Distribution::LogNormal(ref inner) => rng.sample(inner),
-            Distribution::Uniform(ref inner) => rng.sample(inner),
-        }
-    }
-}
-
-#[derive(Deserialize, Serialize, Clone)]
-#[serde(tag = "name")]
-pub enum DistributionConfig {
-    #[serde(rename = "standard_normal")]
-    StandardNormal,
-    #[serde(rename = "lognormal")]
-    LogNormal { mean: f64, std_dev: f64 },
-    #[serde(rename = "uniform")]
-    Uniform { min: f64, max: f64 },
-}
-
-impl From<DistributionConfig> for Distribution {
-    fn from(c: DistributionConfig) -> Distribution {
-        match c {
-            DistributionConfig::StandardNormal => Distribution::StandardNormal(StandardNormal),
-            DistributionConfig::LogNormal { mean, std_dev } => {
-                Distribution::LogNormal(LogNormal::new(mean, std_dev))
-            }
-            DistributionConfig::Uniform { min, max } => {
-                Distribution::Uniform(Uniform::new(min, max))
-            }
-        }
-    }
-}
 
 #[derive(Deserialize, Serialize)]
 pub struct StarConfig {

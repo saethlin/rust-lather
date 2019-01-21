@@ -34,7 +34,15 @@ impl std::fmt::Debug for Simulation {
 }
 
 #[derive(Deserialize, Serialize)]
+#[serde(untagged)]
+enum SeedConfig {
+    Number(u64),
+    Text(String),
+}
+
+#[derive(Deserialize, Serialize)]
 struct Config {
+    seed: Option<SeedConfig>,
     star: StarConfig,
     spots: Option<Vec<SpotConfig>>,
 }
@@ -43,6 +51,7 @@ impl Config {
     // This is only used to produce our pretty example if somebody feeds in a bad config
     fn example() -> Config {
         Config {
+            seed: None,
             star: StarConfig {
                 grid_size: 1000,
                 radius: 1.0,
@@ -122,10 +131,24 @@ impl Simulation {
             )
         })?;
 
+        let rng = match config.seed {
+            Some(SeedConfig::Number(num)) => StdRng::seed_from_u64(num),
+            Some(SeedConfig::Text(t)) => {
+                if &t == "entropy" {
+                    StdRng::from_entropy()
+                } else {
+                    return Err(
+                    "Invalid rng seed specification, valid seeds are \"entropy\", or an integer"
+                        .to_string());
+                }
+            }
+            None => StdRng::seed_from_u64(0x0123456789ABCDEFu64),
+        };
+
         let mut sim = Simulation {
             star: Arc::new(Star::from_config(&config.star)),
             spots: Vec::new(),
-            generator: Arc::new(Mutex::new(StdRng::seed_from_u64(0x0123456789ABCDEFu64))),
+            generator: Arc::new(Mutex::new(rng)),
         };
 
         if let Some(spot_configs) = config.spots {
