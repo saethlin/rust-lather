@@ -1,4 +1,6 @@
 from setuptools import setup
+import shutil
+import os
 
 def build_native(spec):
     build = spec.add_external_build(
@@ -14,6 +16,13 @@ def build_native(spec):
     )
 
 
+if os.name == 'nt':
+    shutil.copy2('lather/lather-vis', 'lather/lather-vis.exe')
+    scripts = ['lather/lather-vis.exe']
+else:
+    shutil.copy2('lather/lather-vis.py', 'lather/lather-vis')
+    scripts = ['lather/lather-vis']
+
 setup(
     name='lather',
     version='0.0.1',
@@ -25,5 +34,5 @@ setup(
     milksnake_tasks=[
         build_native
     ],
-    scripts=['lather/lather-vis'],
+    scripts=scripts,
 )
