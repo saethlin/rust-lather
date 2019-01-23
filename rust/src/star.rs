@@ -50,6 +50,7 @@ pub struct Star {
     pub longitude_distribution: Distribution,
     pub fillfactor_distribution: Distribution,
     pub lifetime_distribution: Distribution,
+    image: std::sync::Mutex<Option<Vec<u8>>>,
 }
 
 impl std::fmt::Debug for Star {
@@ -153,6 +154,7 @@ impl Star {
             longitude_distribution,
             fillfactor_distribution,
             lifetime_distribution,
+            image: std::sync::Mutex::new(None),
         }
     }
 
@@ -164,14 +166,21 @@ impl Star {
         1.0 - self.limb_linear * (1.0 - x) - self.limb_quadratic * (1.0 - x).powi(2)
     }
 
-    pub fn draw_rgba(&self) -> Vec<u8> {
+    pub fn draw_bgr(&self, image: &mut [u8]) {
+        let mut cache = self.image.lock().unwrap();
+
+        if let Some(ref cached) = *cache {
+            image.copy_from_slice(&cached);
+            return;
+        }
+
         let color = match &TEMP_TO_RGB.binary_search_by(|k| k.0.cmp(&(self.temperature as u16))) {
             Ok(v) => TEMP_TO_RGB[*v].1,
             Err(v) => TEMP_TO_RGB[*v].1,
         };
         let color = [color[0] as f64, color[1] as f64, color[2] as f64];
 
-        let mut output = Vec::with_capacity(4 * 1000 * 1000);
+        let mut i = 0;
         for z in linspace(1.0, -1.0, 1000) {
             for y in linspace(1.0, -1.0, 1000) {
                 let intensity = if (y.powi(2) + z.powi(2)) <= 1.0 {
@@ -180,20 +189,15 @@ impl Star {
                 } else {
                     0.0
                 };
-                output.push((color[0] * intensity) as u8);
-                output.push((color[1] * intensity) as u8);
-                output.push((color[2] * intensity) as u8);
-                output.push(255);
-                /*
-                output.push((intensity * color[0]) as u8);
-                output.push((intensity * color[1]) as u8);
-                output.push((intensity * color[2]) as u8);
-                output.push(255);
-                */
+                // opencv wants these in BGR but the image array has them in RGB
+                image[i + 0] = (color[2] * intensity) as u8;
+                image[i + 1] = (color[1] * intensity) as u8;
+                image[i + 2] = (color[0] * intensity) as u8;
+                i += 3;
             }
         }
 
-        output
+        *cache = Some(image.to_vec());
     }
 }
 

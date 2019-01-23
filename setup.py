@@ -20,9 +20,10 @@ setup(
     zip_safe=False,
     platforms='any',
     setup_requires=['milksnake'],
-    install_requires=['milksnake', 'numpy', 'scipy'],
+    install_requires=['milksnake', 'numpy', 'scipy', 'opencv-python'],
     milksnake_tasks=[
         build_native
     ],
+    scripts=['lather/lather-vis'],
 )
 

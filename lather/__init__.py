@@ -40,6 +40,19 @@ class Simulation:
 
         return rv, bisectors
 
+    def draw_bgr(self, time, out=None):
+        if out is None:
+            image = np.empty((1000, 1000, 3), dtype=np.uint8)
+        elif (out.dtype != np.uint8) or (out.shape != (1000, 1000, 3)):
+            raise ValueError("image argument must be an array of np.uint, with shape (1000, 1000, 3)")
+        else:
+            image = out
+            
+        image_ptr = ffi.cast("char *", image.ctypes.data)
+
+        lib.simulation_draw_bgr(self._native, time, image_ptr)
+        return image
+
 
 def compute_bisector(ccf, size=1000):
     '''

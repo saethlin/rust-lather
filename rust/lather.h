@@ -21,6 +21,8 @@ void simulation_add_spot(Simulation *sim,
  */
 void simulation_clear_spots(Simulation *sim);
 
+void simulation_draw_bgr(Simulation *sim, double time, uint8_t *image_ptr);
+
 /*
  * Close down a simulation
  */

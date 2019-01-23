@@ -1,3 +1,4 @@
+/*
 extern crate lather;
 extern crate png;
 extern crate rayon;
@@ -26,7 +27,7 @@ struct Opt {
 
     /// Frames in the simulation run
     #[structopt(short = "frames", default_value = "1000")]
-    frames: u64,
+    frames: usize,
 }
 
 fn main() {
@@ -34,6 +35,12 @@ fn main() {
 
     let mut sim = Simulation::from_config(&opt.config).unwrap();
 
+    for time in linspace(0.0, opt.duration.unwrap_or(sim.star.period), opt.frames) {
+        sim.check_fill_factor(time);
+        let image = sim.draw_rgb(time);
+    }
+
+    /*
     let times: Vec<_> = linspace(
         0.0,
         opt.duration.unwrap_or(sim.star.period),
@@ -101,15 +108,19 @@ fn main() {
             }
         }
     }
+    */
 }
 
 fn save_png(image: &[u8], filename: &str) {
-    let file = ::std::fs::File::create(filename).unwrap();
-    let w = &mut ::std::io::BufWriter::new(file);
+let file = ::std::fs::File::create(filename).unwrap();
+let w = &mut ::std::io::BufWriter::new(file);
 
-    let mut encoder = png::Encoder::new(w, 1000, 1000);
-    encoder.set(png::ColorType::RGBA).set(png::BitDepth::Eight);
-    let mut writer = encoder.write_header().unwrap();
+let mut encoder = png::Encoder::new(w, 1000, 1000);
+encoder.set(png::ColorType::RGBA).set(png::BitDepth::Eight);
+let mut writer = encoder.write_header().unwrap();
 
-    writer.write_image_data(image).unwrap();
+writer.write_image_data(image).unwrap();
 }
+*/
+
+fn main() {}

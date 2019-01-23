@@ -291,12 +291,15 @@ impl Simulation {
 
     /// Draw the simulation in a row-major fashion, as it would be seen in the visible
     /// wavelength band, 4000-7000 Angstroms.
-    pub fn draw_rgba(&self, time: f64) -> Vec<u8> {
+    pub fn draw_bgr(&mut self, time: f64, image: &mut [u8]) {
         // This is slow because the image is row-major, but we navigate the simulation in
         // a column-major fashion to follow the rotational symmetry
         use boundingshape::BoundingShape;
         use linspace::floatrange;
-        let mut image = self.star.draw_rgba();
+
+        self.check_fill_factor(time);
+
+        self.star.draw_bgr(image);
 
         let star_intensity = planck_integral(self.star.temperature, 4000e-10, 7000e-10);
         // Clone the spots and mutate a local copy so this function runs in parallel
@@ -335,23 +338,15 @@ impl Simulation {
                             let intensity = self.star.limb_brightness(x) * spot.intensity;
                             let z_index = ((-z + 1.0) / 2.0 * 1000.0).round() as usize;
                             let index = (z_index * 1000 + y_index) as usize;
-                            for i in 0..=2 {
-                                let value = min(color[i] * intensity, 255.0) as u8;
-                                image[4 * index + i] = value;
-                            }
-                            image[4 * index + 3] = 255
-                            /*
-                            image[4 * index] = (intensity * 255.0) as u8;
-                            image[4 * index + 1] = (intensity * 131.0) as u8;
-                            image[4 * index + 2] = 0;
-                            image[4 * index + 3] = 255;
-                            */
+                            // opencv wants BGR, we have RGB
+                            image[3 * index + 0] = min(color[2] * intensity, 255.0) as u8;
+                            image[3 * index + 1] = min(color[1] * intensity, 255.0) as u8;
+                            image[3 * index + 2] = min(color[0] * intensity, 255.0) as u8;
                         }
                     }
                 }
             }
         }
-        image
     }
 }
 
@@ -371,8 +366,8 @@ mod tests {
 
     #[test]
     fn example_config_is_valid() {
-        Simulation::from_config("../examples/sun.toml").unwrap();
-        Simulation::from_config("../examples/random.toml").unwrap();
+        Simulation::from_config(&Path::new("../examples/sun.toml")).unwrap();
+        Simulation::from_config(&Path::new("../examples/random.toml")).unwrap();
     }
 }
 

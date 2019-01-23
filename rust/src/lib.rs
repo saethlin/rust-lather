@@ -171,3 +171,9 @@ pub unsafe extern "C" fn simulation_add_spot(
         temperature: None,
     });
 }
+
+#[no_mangle]
+pub unsafe extern "C" fn simulation_draw_bgr(sim: *mut Simulation, time: f64, image_ptr: *mut u8) {
+    let image = std::slice::from_raw_parts_mut(image_ptr, 1000 * 1000 * 3);
+    (*sim).draw_bgr(time, image);
+}
