@@ -3,6 +3,13 @@ use std::fs::File;
 use std::io::Read;
 
 fn main() {
+    let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let mut config = cbindgen::Config::default();
+    config.language = cbindgen::Language::C;
+    cbindgen::generate_with_config(&crate_dir, config)
+      .unwrap()
+      .write_to_file("target/lather.h");
+
     let ccf_file = std::fs::read_to_string(
         "resources/CCF_solar_spectrum_G2_FTS_reso_not_evenly_sampled_in_freq.rdb",
     )
