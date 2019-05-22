@@ -1,4 +1,3 @@
-use std::f64::consts;
 use std::sync::Arc;
 
 use boundingshape::BoundingShape;
@@ -11,7 +10,8 @@ pub struct SpotConfig {
     pub latitude: f64,
     pub longitude: f64,
     pub fill_factor: f64,
-    pub plage: Option<bool>,
+    #[serde(default)]
+    pub plage: bool,
     pub temperature: Option<f64>,
 }
 
@@ -59,15 +59,18 @@ impl Spot {
     /// latitude is 0 at the equator and both latitude and longitude are
     /// measured in degrees.
     pub fn from_config(star: Arc<Star>, config: &SpotConfig) -> Spot {
+        if config.plage {
+            println!("Warning: you've configured a spot as a plage but this doesn't actually do anything yet");
+        }
         Spot {
             star: Arc::clone(&star),
-            latitude: config.latitude * consts::PI / 180.0,
-            longitude: config.longitude * consts::PI / 180.0,
+            latitude: config.latitude.to_radians(),
+            longitude: config.longitude.to_radians(),
             radius: (2.0 * config.fill_factor).sqrt(),
             temperature: config
                 .temperature
                 .unwrap_or(star.temperature - star.spot_temp_diff),
-            plage: config.plage.unwrap_or(false),
+            plage: config.plage,
             mortality: Mortality::Immortal,
             intensity: 0.0,
         }

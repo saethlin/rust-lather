@@ -1,4 +1,3 @@
-use std;
 use std::f64::consts;
 
 use bounds::Bounds;
@@ -9,8 +8,8 @@ use profile::Profile;
 
 use rand::distributions::{LogNormal, Uniform};
 
-static SOLAR_RADIUS: f64 = 6.96e8;
-static DAYS_TO_SECONDS: f64 = 86400.0;
+const SOLAR_RADIUS: f64 = 6.96e8;
+const DAYS_TO_SECONDS: f64 = 86400.0;
 
 #[derive(Deserialize, Serialize)]
 pub struct StarConfig {
@@ -81,7 +80,7 @@ impl Star {
 
         let edge_velocity =
             (2.0 * consts::PI * config.radius * SOLAR_RADIUS) / (config.period * DAYS_TO_SECONDS);
-        let equatorial_velocity = edge_velocity * (config.inclination * consts::PI / 180.0).sin();
+        let equatorial_velocity = edge_velocity * (config.inclination.to_radians()).sin();
 
         let profile_quiet =
             Profile::new(::solar_ccfs::RV.to_vec(), ::solar_ccfs::CCF_QUIET.to_vec());
@@ -134,7 +133,7 @@ impl Star {
         Star {
             period: config.period,
             // Config units are degrees, but we use radians internally
-            inclination: config.inclination * consts::PI / 180.0,
+            inclination: config.inclination.to_radians(),
             temperature: config.temperature,
             spot_temp_diff: config.spot_temp_diff,
             limb_linear: config.limb_linear,

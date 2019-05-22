@@ -167,7 +167,7 @@ pub unsafe extern "C" fn simulation_add_spot(
         latitude,
         longitude,
         fill_factor,
-        plage: Some(plage),
+        plage,
         temperature: None,
     });
 }
