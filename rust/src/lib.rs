@@ -102,15 +102,14 @@ pub unsafe extern "C" fn simulation_observe_flux(
     n_times: usize,
     wave_start: f64,
     wave_end: f64,
-) -> *const f64 {
+    flux: *mut f64,
+) {
     if sim.is_null() {
-        return std::ptr::null();
+        return;
     }
     let time_slice = std::slice::from_raw_parts(times, n_times);
     let output = (*sim).observe_flux(time_slice, Bounds::new(wave_start, wave_end));
-    let ptr = output.as_ptr();
-    std::mem::forget(output);
-    ptr
+    std::ptr::copy_nonoverlapping(output.as_ptr(), flux, n_times)
 }
 
 /// Observe the rv and bisectors of a simulation at given time values in days
@@ -121,23 +120,23 @@ pub unsafe extern "C" fn simulation_observe_rv(
     n_times: usize,
     wave_start: f64,
     wave_end: f64,
-) -> *const f64 {
+    ccfs: *mut f64,
+) {
     if sim.is_null() {
-        return std::ptr::null();
+        return;
     }
 
     let time_slice = std::slice::from_raw_parts(times, n_times);
     let observations = (*sim).observe_rv(time_slice, Bounds::new(wave_start, wave_end));
-    let mut output = Vec::with_capacity(n_times * 401);
-    for ob in &observations {
-        output.push(ob.rv);
+    let ccf_output = std::slice::from_raw_parts_mut(ccfs, n_times * 401);
+    for (i, ccf_value) in observations.iter().flat_map(|ob| &ob.ccf).enumerate() {
+        ccf_output[i] = *ccf_value;
     }
-    for ob in &observations {
-        output.extend(&ob.ccf);
-    }
-    let ptr = output.as_ptr();
-    std::mem::forget(output);
-    ptr
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn simulation_get_quiet_ccf(sim: *mut Simulation, ccf: *mut f64) {
+    std::ptr::copy_nonoverlapping((*sim).star.integrated_ccf.as_ptr(), ccf, 401)
 }
 
 /// Remove all spots on this simulation

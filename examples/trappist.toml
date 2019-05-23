@@ -17,14 +17,12 @@ target_fill_factor  = 0.00    # Try to maintain this fill factor by randomly gen
 latitude = 30.0
 longitude = 180.0
 fill_factor = 0.01
-plage = false
 temperature = 2651
 
 [[spots]]
 latitude = -30.0
 longitude = 180.0
 fill_factor = 0.01
-plage = false
 
 #[1] http://nssdc.gsfc.nasa.gov/planetary/planetfact.html
 #[2] Meunier et al. 2010
