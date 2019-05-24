@@ -30,11 +30,11 @@ class Simulation:
             self.instrument_profile = np.exp(
                 -RV_FOR_CCFS ** 2 / (2 * (instrument_profile_sigma) ** 2)
             )
-
+        
         quiet_ccf = np.empty(401, dtype=np.float64)
         quiet_ccf_ptr = ffi.cast("double *", quiet_ccf.ctypes.data)
         lib.simulation_get_quiet_ccf(self._native, quiet_ccf_ptr)
-
+        
         quiet_ccf = self._apply_resolution_correction(quiet_ccf)
         self.zero_rv = compute_rv(quiet_ccf)
 
@@ -75,10 +75,14 @@ class Simulation:
 
     # This would be implemented in the Rust part but I can't make the FFT work
     def _apply_resolution_correction(self, ccf):
+        ccf = ccf.copy()
+        ccf *= -1;
+        ccf -= ccf.min()
+        ccf /= ccf.max()
         if self.instrument_profile is None:
-            return -ccf + 1
+            return ccf
         else:
-            return scipy.signal.convolve(-ccf + 1, self.instrument_profile, mode="same")
+            return scipy.signal.convolve(ccf, self.instrument_profile, mode="same")
 
     def draw_bgr(self, time, out=None):
         if out is None:
@@ -96,13 +100,14 @@ class Simulation:
         return image
 
 
+# TODO: This is SOAP-2.0's RV calculation and IMO the technique is wrong
 def compute_rv(ccf):
-    # resolution correction makes the edges get a bit nuts
-    max_ind = np.argmax(ccf[10:-10]) + 10
-    p = np.polyfit(
-        RV_FOR_CCFS[max_ind - 3 : max_ind + 4], ccf[max_ind - 3 : max_ind + 4], deg=2
-    )
-    return -p[1] / (2 * p[0])
+    import scipy.optimize
+    def gauss(x, a, b, c, d):
+        return a * np.exp(-(x - b)**2 / (2 * c**2)) + d
+
+    p, cov = scipy.optimize.curve_fit(gauss, RV_FOR_CCFS, ccf, p0=[1.0, 0.0, 2000.0, 0.0])
+    return p[1]
 
 
 def compute_bisector(ccf, size=1000):

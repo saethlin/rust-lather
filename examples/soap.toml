@@ -1,0 +1,22 @@
+# This is my closest approximation of the SOAP-2.0 default config
+[star]
+grid_size           = 1000    # (Notional) grid resolution NxN
+radius              = 1.0     # Stellar radius [Rsun]
+period              = 25.05   # Rotation period [days] 25.05 for the Sun [1]
+inclination         = 90.0    # Stellar inclination angle [degree], 0: pole on (North)
+temperature         = 5778    # Effective temperature of the star [K], 5778 for the Sun [1]
+spot_temp_diff      = 663     # Difference between star and spot effective temp, 663 for the Sun [2]
+limb_linear         = 0.29    # Linear limb darkening coefficient, 0.29 for the Sun ([4],[3])
+limb_quadratic      = 0.34    # Quadratic limb darkening coefficient, 0.34 for the Sun ([4],[3])
+target_fill_factor  = 0.00    # Try to maintain this fill factor by randomly generating spots
+
+# This is the only spot that's activated in the SOAP-2.0 default config
+[[spots]]
+latitude = 30.0
+longitude = 180.0
+fill_factor = 0.01
+
+#[1] http://nssdc.gsfc.nasa.gov/planetary/planetfact.html
+#[2] Meunier et al. 2010
+#[3] Claret & Bloemen 2011
+#[4] Oshagh et al 2013

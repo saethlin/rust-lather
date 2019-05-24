@@ -131,7 +131,7 @@ impl Profile {
                 .zip(self.derivative.iter())
                 .skip((-quotient) as usize)
                 .map(|(ccf, der)| ccf - remainder * der)
-                .chain(iter::repeat(self.ccf[0]).take((-quotient) as usize))
+                .chain(iter::repeat(self.ccf[self.ccf.len() - 1]).take((-quotient) as usize))
                 .zip(output.iter_mut())
                 .for_each(|(shifted, output)| *output = shifted);
         }

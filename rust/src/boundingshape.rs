@@ -203,21 +203,22 @@ impl BoundingShape {
         let z_max = floatrange(
             self.center.z + self.radius,
             self.center.z - self.radius,
-            -self.grid_interval / 1.0,
+            -self.grid_interval / 2.0,
         )
-        .find(|z| self.on_spot(y, *z));
+        .find(|z| self.on_spot(y, *z))
+        .map(|z| z + self.grid_interval / 2.0);
 
         let z_min = floatrange(
             self.center.z - self.radius,
             self.center.z + self.radius,
-            self.grid_interval / 1.0,
+            self.grid_interval / 2.0,
         )
-        .find(|z| self.on_spot(y, *z));
+        .find(|z| self.on_spot(y, *z))
+        .map(|z| z - self.grid_interval / 2.0);
 
-        if z_max.is_none() || z_min.is_none() {
-            None
-        } else {
-            Some(Bounds::new(z_min.unwrap(), z_max.unwrap()))
+        match (z_min, z_max) {
+            (Some(min), Some(max)) => Some(Bounds::new(min, max)),
+            _ => None,
         }
     }
 

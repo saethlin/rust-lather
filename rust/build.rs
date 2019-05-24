@@ -33,7 +33,7 @@ fn main() {
     for &(ref name, ref array) in &[("RV", rv), ("CCF_QUIET", ccf_quiet), ("CCF_SPOT", ccf_spot)] {
         let _ = write!(output, "pub static {}: [f64; {}] = [", name, array.len());
         for val in array {
-            let _ = write!(output, "{:.2e}, ", val);
+            let _ = write!(output, "{:.6e}, ", val);
         }
         // Remove the last trailing comma and space
         output.pop();
