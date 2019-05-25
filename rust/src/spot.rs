@@ -3,6 +3,7 @@ use std::sync::Arc;
 use boundingshape::BoundingShape;
 use bounds::Bounds;
 use linspace::floatrange;
+use solar_ccfs::CCF_LEN;
 use star::Star;
 
 #[derive(Deserialize, Serialize)]
@@ -100,10 +101,9 @@ impl Spot {
         }
     }
 
-    pub fn get_ccf(&self, time: f64) -> Vec<f64> {
-        let mut profile = vec![0.0; self.star.profile_spot.len()];
-        let mut quiet_shifted = vec![0.0; self.star.profile_quiet.len()];
-        let mut active_shifted = vec![0.0; self.star.profile_spot.len()];
+    pub fn get_ccf(&self, time: f64, profile: &mut [f64]) {
+        let mut quiet_shifted = [0.0; CCF_LEN];
+        let mut active_shifted = [0.0; CCF_LEN];
         let bounds = BoundingShape::new(self, time);
         let mut current_z_bounds = None;
         if let Some(y_bounds) = bounds.y_bounds() {
@@ -131,7 +131,6 @@ impl Spot {
                 }
             }
         };
-        profile
     }
 
     /// Returns `true` if this spot currently exists.

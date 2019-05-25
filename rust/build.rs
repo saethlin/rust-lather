@@ -30,6 +30,9 @@ fn main() {
     // This prevents writing a new file every compilation which would cause cargo to recompile the
     // whole project
     let mut output = String::new();
+
+    let _ = writeln!(output, "pub const CCF_LEN: usize = {};\n", rv.len());
+
     for &(ref name, ref array) in &[("RV", rv), ("CCF_QUIET", ccf_quiet), ("CCF_SPOT", ccf_spot)] {
         let _ = write!(output, "pub static {}: [f64; {}] = [", name, array.len());
         for val in array {

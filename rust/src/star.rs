@@ -2,7 +2,6 @@ use std::f64::consts;
 
 use bounds::Bounds;
 use distributions::{Distribution, DistributionConfig};
-use fit_rv::fit_rv;
 use linspace::linspace;
 use profile::Profile;
 
@@ -39,7 +38,6 @@ pub struct Star {
     pub limb_quadratic: f64,
     pub grid_size: usize,
     pub flux_quiet: f64,
-    pub zero_rv: f64,
     pub equatorial_velocity: f64,
     pub target_fill_factor: f64,
     pub integrated_ccf: Vec<f64>,
@@ -63,7 +61,6 @@ impl std::fmt::Debug for Star {
             .field("limb_quadratic", &self.limb_quadratic)
             .field("grid_size", &self.grid_size)
             .field("flux_quiet", &self.flux_quiet)
-            .field("zero_rv", &self.zero_rv)
             .field("equatorial_velocity", &self.equatorial_velocity)
             .field("target_fill_factor", &self.target_fill_factor)
             .field("latitude_distribution", &self.latitude_distribution)
@@ -140,7 +137,6 @@ impl Star {
             limb_quadratic: config.limb_quadratic,
             grid_size: config.grid_size,
             flux_quiet,
-            zero_rv: fit_rv(&::solar_ccfs::RV, &integrated_ccf),
             equatorial_velocity,
             target_fill_factor: config
                 .minimum_fill_factor

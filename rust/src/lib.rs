@@ -3,21 +3,16 @@
 //!
 //! This project was inspired by a desire to improve upon the
 //! starspot modeling library named SOAP.
-#[cfg(feature = "simd")]
-extern crate faster;
 extern crate quadrature;
 extern crate rand;
 extern crate rayon;
-extern crate rulinalg;
 #[macro_use]
-extern crate serde_derive;
 extern crate serde;
 extern crate toml;
 
 mod boundingshape;
 mod bounds;
 mod distributions;
-mod fit_rv;
 mod linspace;
 mod planck;
 mod point;
@@ -29,7 +24,6 @@ mod star;
 
 pub use bounds::Bounds;
 pub use linspace::{floatrange, linspace};
-pub use simulation::Observation;
 pub use simulation::Simulation;
 pub use spot::SpotConfig;
 
@@ -94,6 +88,16 @@ pub unsafe extern "C" fn simulation_tostring(sim: *mut Simulation) -> *const c_c
     ptr
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn ccf_len() -> usize {
+    solar_ccfs::CCF_LEN
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rv_for_ccfs() -> *const f64 {
+    solar_ccfs::RV.as_ptr()
+}
+
 /// Observe the flux of a simulation at given time values in days
 #[no_mangle]
 pub unsafe extern "C" fn simulation_observe_flux(
@@ -129,7 +133,7 @@ pub unsafe extern "C" fn simulation_observe_rv(
     let time_slice = std::slice::from_raw_parts(times, n_times);
     let observations = (*sim).observe_rv(time_slice, Bounds::new(wave_start, wave_end));
     let ccf_output = std::slice::from_raw_parts_mut(ccfs, n_times * 401);
-    for (i, ccf_value) in observations.iter().flat_map(|ob| &ob.ccf).enumerate() {
+    for (i, ccf_value) in observations.iter().flat_map(|ob| ob.iter()).enumerate() {
         ccf_output[i] = *ccf_value;
     }
 }

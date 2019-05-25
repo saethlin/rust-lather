@@ -1,4 +1,3 @@
-use fit_rv::fit_rv;
 use planck::planck_integral;
 use rand::prelude::*;
 use rayon::prelude::*;
@@ -6,17 +5,10 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use bounds::Bounds;
+use solar_ccfs::CCF_LEN;
 use spot::Mortality::Mortal;
 use spot::{Spot, SpotConfig};
 use star::{Star, StarConfig};
-
-/// An observed radial velocity and line profile.
-pub struct Observation {
-    /// The radial velocity value in m/s.
-    pub rv: f64,
-    /// The ccf for this observation, RV values available from solar_ccfs::RV.
-    pub ccf: Vec<f64>,
-}
 
 /// A model of a star with spots that can be observed.
 pub struct Simulation {
@@ -253,7 +245,7 @@ impl Simulation {
 
     /// Computes the radial velocity and line bisector of this system at each time (in days),
     /// when observed in the wavelength band between `wavelength_min` and `wavelength_max`.
-    pub fn observe_rv(&mut self, time: &[f64], wavelength: Bounds) -> Vec<Observation> {
+    pub fn observe_rv(&mut self, time: &[f64], wavelength: Bounds) -> Vec<Vec<f64>> {
         for t in time.iter() {
             self.check_fill_factor(*t);
         }
@@ -267,9 +259,10 @@ impl Simulation {
 
         time.par_iter()
             .map(|t| {
-                let mut spot_profile = vec![0.0; self.star.profile_spot.len()];
+                let mut spot_profile = vec![0.0; CCF_LEN];
+                let mut profile = [0.0; CCF_LEN];
                 for spot in self.spots.iter().filter(|s| s.alive(*t)) {
-                    let profile = spot.get_ccf(*t);
+                    spot.get_ccf(*t, &mut profile);
                     for (total, this) in spot_profile.iter_mut().zip(profile.iter()) {
                         *total += *this;
                     }
@@ -279,12 +272,7 @@ impl Simulation {
                     *spot = *star - *spot;
                 }
 
-                let rv = fit_rv(&self.star.profile_quiet.rv, &spot_profile) - self.star.zero_rv;
-
-                Observation {
-                    rv,
-                    ccf: spot_profile,
-                }
+                spot_profile
             })
             .collect()
     }

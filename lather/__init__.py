@@ -4,9 +4,11 @@ import scipy.signal
 import toml
 from lather._native import ffi, lib
 
-# This isn't actually exactly equal to what's in the resource file
-# but because of a bug in numpy; there's a few f64 epsilon of difference
-RV_FOR_CCFS = np.linspace(-20e3, 20e3, num=401, endpoint=True, dtype=np.float64)
+RV_FOR_CCFS = np.frombuffer(
+    ffi.buffer(lib.rv_for_ccfs(), lib.ccf_len() * 8),
+    dtype=np.float64,
+    count=lib.ccf_len(),
+).copy()
 
 
 class Simulation:
@@ -30,11 +32,11 @@ class Simulation:
             self.instrument_profile = np.exp(
                 -RV_FOR_CCFS ** 2 / (2 * (instrument_profile_sigma) ** 2)
             )
-        
-        quiet_ccf = np.empty(401, dtype=np.float64)
+
+        quiet_ccf = np.empty(lib.ccf_len(), dtype=np.float64)
         quiet_ccf_ptr = ffi.cast("double *", quiet_ccf.ctypes.data)
         lib.simulation_get_quiet_ccf(self._native, quiet_ccf_ptr)
-        
+
         quiet_ccf = self._apply_resolution_correction(quiet_ccf)
         self.zero_rv = compute_rv(quiet_ccf)
 
@@ -59,7 +61,7 @@ class Simulation:
     def observe_rv(self, time, wave_start, wave_end):
         time_ptr = ffi.cast("double *", time.ctypes.data)
 
-        ccfs = np.empty((time.size, 401))
+        ccfs = np.empty((time.size, lib.ccf_len()))
         ccfs_ptr = ffi.cast("double *", ccfs.ctypes.data)
 
         lib.simulation_observe_rv(
@@ -76,7 +78,7 @@ class Simulation:
     # This would be implemented in the Rust part but I can't make the FFT work
     def _apply_resolution_correction(self, ccf):
         ccf = ccf.copy()
-        ccf *= -1;
+        ccf *= -1
         ccf -= ccf.min()
         ccf /= ccf.max()
         if self.instrument_profile is None:
@@ -103,10 +105,13 @@ class Simulation:
 # TODO: This is SOAP-2.0's RV calculation and IMO the technique is wrong
 def compute_rv(ccf):
     import scipy.optimize
-    def gauss(x, a, b, c, d):
-        return a * np.exp(-(x - b)**2 / (2 * c**2)) + d
 
-    p, cov = scipy.optimize.curve_fit(gauss, RV_FOR_CCFS, ccf, p0=[1.0, 0.0, 2000.0, 0.0])
+    def gauss(x, a, b, c, d):
+        return a * np.exp(-(x - b) ** 2 / (2 * c ** 2)) + d
+
+    p, cov = scipy.optimize.curve_fit(
+        gauss, RV_FOR_CCFS, ccf, p0=[1.0, 0.0, 2000.0, 0.0]
+    )
     return p[1]
 
 

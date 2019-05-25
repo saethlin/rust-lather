@@ -1,6 +1,3 @@
-#[cfg(feature = "simd")]
-use faster::*;
-
 /// A cross-correlation profile, which can be shifted by fast linear interpolation.
 #[derive(Debug)]
 pub struct Profile {
@@ -15,30 +12,6 @@ impl Profile {
     /// cross-correlation function, and computes the derivative to enable fast
     /// linear interpolation to simulate viewing the profile at different
     /// relative velocities.
-    #[cfg(feature = "simd")]
-    pub fn new(rv: Vec<f64>, ccf: Vec<f64>) -> Self {
-        let mut derivative = vec![0.0; ccf.len()];
-        (
-            ccf[..ccf.len() - 1].simd_iter(f64s(0.0)),
-            ccf[1..].simd_iter(f64s(0.0)),
-            rv[..rv.len() - 1].simd_iter(f64s(0.0)),
-            rv[1..].simd_iter(f64s(0.0)),
-        )
-            .zip()
-            .simd_map(|(cl, cr, rvl, rvr)| (cl - cr) / (rvl - rvr))
-            .scalar_fill(&mut derivative);
-
-        let stepsize = (rv[0] - rv[1]).abs();
-
-        Profile {
-            rv,
-            ccf,
-            derivative,
-            stepsize,
-        }
-    }
-
-    #[cfg(not(feature = "simd"))]
     pub fn new(rv: Vec<f64>, ccf: Vec<f64>) -> Self {
         use std::iter;
 
@@ -72,42 +45,6 @@ impl Profile {
     /// this profile's cross-correlation function by linear interpolation.
     /// The units of velocity must match those of the radial velocity used
     /// to construct this profile.
-    #[cfg(feature = "simd")]
-    pub fn shift_into(&self, velocity: f64, output: &mut [f64]) {
-        let quotient = (velocity / self.stepsize).round() as isize;
-        let remainder = velocity - (quotient as f64) * self.stepsize;
-
-        if velocity >= 0.0 {
-            let quotient = quotient as usize;
-            for i in 0..quotient {
-                output[i] = 0.0;
-            }
-
-            (
-                self.ccf[..output.len() - quotient].simd_iter(f64s(0.0)),
-                self.derivative[..output.len() - quotient].simd_iter(f64s(0.0)),
-            )
-                .zip()
-                .simd_map(|(ccf, der)| ccf - f64s(remainder) * der)
-                .scalar_fill(&mut output[quotient..]);
-        } else {
-            let quot = -quotient as usize;
-            let len = output.len();
-            (
-                self.ccf[quot..].simd_iter(f64s(0.0)),
-                self.derivative[quot..].simd_iter(f64s(0.0)),
-            )
-                .zip()
-                .simd_map(|(ccf, der)| ccf - f64s(remainder) * der)
-                .scalar_fill(&mut output[..len - quot]);
-
-            for i in (output.len() - quot)..output.len() {
-                output[i] = 0.0;
-            }
-        }
-    }
-
-    #[cfg(not(feature = "simd"))]
     pub fn shift_into(&self, velocity: f64, output: &mut [f64]) {
         use std::iter;
         let quotient = (velocity / self.stepsize).round() as isize;
