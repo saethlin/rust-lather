@@ -128,6 +128,7 @@ impl Simulation {
             Some(SeedConfig::Number(num)) => StdRng::seed_from_u64(num),
             Some(SeedConfig::Text(t)) => {
                 if &t == "entropy" {
+                    eprintln!("Seeding simulation RNG from system-provided entropy");
                     StdRng::from_entropy()
                 } else {
                     return Err(
