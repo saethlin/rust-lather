@@ -1,10 +1,12 @@
 use std::sync::Arc;
 
-use boundingshape::BoundingShape;
-use bounds::Bounds;
-use linspace::floatrange;
-use solar_ccfs::CCF_LEN;
-use star::Star;
+use serde::{Deserialize, Serialize};
+
+use crate::boundingshape::BoundingShape;
+use crate::bounds::Bounds;
+use crate::linspace::floatrange;
+use crate::solar_ccfs::CCF_LEN;
+use crate::star::Star;
 
 #[derive(Deserialize, Serialize)]
 pub struct SpotConfig {

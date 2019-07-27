@@ -1,14 +1,18 @@
-use planck::planck_integral;
-use rand::prelude::*;
-use rayon::prelude::*;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
-use bounds::Bounds;
-use solar_ccfs::CCF_LEN;
-use spot::Mortality::Mortal;
-use spot::{Spot, SpotConfig};
-use star::{Star, StarConfig};
+use rand::prelude::*;
+use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
+
+use crate::boundingshape::BoundingShape;
+use crate::bounds::Bounds;
+use crate::linspace::floatrange;
+use crate::planck::planck_integral;
+use crate::solar_ccfs::CCF_LEN;
+use crate::spot::Mortality::Mortal;
+use crate::spot::{Spot, SpotConfig};
+use crate::star::{Star, StarConfig};
 
 /// A model of a star with spots that can be observed.
 pub struct Simulation {
@@ -283,9 +287,6 @@ impl Simulation {
     pub fn draw_bgr(&mut self, time: f64, image: &mut [u8]) {
         // This is slow because the image is row-major, but we navigate the simulation in
         // a column-major fashion to follow the rotational symmetry
-        use boundingshape::BoundingShape;
-        use linspace::floatrange;
-
         self.check_fill_factor(time);
 
         self.star.draw_bgr(image);

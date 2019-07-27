@@ -4,7 +4,7 @@ import os
 
 
 def build_native(spec):
-    build = spec.add_external_build(cmd=["cargo", "build", "--release"], path="./rust")
+    build = spec.add_external_build(cmd=["cargo", "build", "--release"], path=".")
 
     spec.add_cffi_module(
         module_path="lather._native",
@@ -23,7 +23,7 @@ else:
 
 setup(
     name="lather",
-    version="0.0.1",
+    version="0.1.0",
     packages=["lather"],
     zip_safe=False,
     platforms="any",
@@ -31,4 +31,7 @@ setup(
     install_requires=["milksnake", "numpy", "scipy", "opencv-python", "toml"],
     milksnake_tasks=[build_native],
     scripts=scripts,
+    project_urls={
+        'Source': 'https://github.com/saethlin/rust-lather/',
+    },
 )

@@ -1,11 +1,13 @@
 use std::f64::consts;
 
-use bounds::Bounds;
-use distributions::{Distribution, DistributionConfig};
-use linspace::linspace;
-use profile::Profile;
+use rand_distr::{LogNormal, Uniform};
+use serde::{Deserialize, Serialize};
 
-use rand::distributions::{LogNormal, Uniform};
+use crate::bounds::Bounds;
+use crate::distributions::{Distribution, DistributionConfig};
+use crate::linspace::linspace;
+use crate::profile::Profile;
+use crate::solar_ccfs::{CCF_QUIET, RV};
 
 const SOLAR_RADIUS: f64 = 6.96e8;
 const DAYS_TO_SECONDS: f64 = 86400.0;
@@ -79,8 +81,7 @@ impl Star {
             (2.0 * consts::PI * config.radius * SOLAR_RADIUS) / (config.period * DAYS_TO_SECONDS);
         let equatorial_velocity = edge_velocity * (config.inclination.to_radians()).sin();
 
-        let profile_quiet =
-            Profile::new(::solar_ccfs::RV.to_vec(), ::solar_ccfs::CCF_QUIET.to_vec());
+        let profile_quiet = Profile::new(RV.to_vec(), CCF_QUIET.to_vec());
         let mut integrated_ccf = vec![0.0; profile_quiet.len()];
         let mut flux_quiet = 0.0;
 
@@ -119,7 +120,7 @@ impl Star {
             .fillfactor_distribution
             .clone()
             .map(|c| Distribution::from(c))
-            .unwrap_or_else(|| Distribution::LogNormal(LogNormal::new(0.5, 4.0)));
+            .unwrap_or_else(|| Distribution::LogNormal(LogNormal::new(0.5, 4.0).unwrap()));
 
         let lifetime_distribution = config
             .lifetime_distribution
@@ -143,7 +144,7 @@ impl Star {
                 .or(config.target_fill_factor)
                 .unwrap_or(0.0),
             integrated_ccf,
-            profile_spot: Profile::new(::solar_ccfs::RV.to_vec(), ::solar_ccfs::CCF_SPOT.to_vec()),
+            profile_spot: Profile::new(crate::RV.to_vec(), crate::CCF_SPOT.to_vec()),
             profile_quiet,
             latitude_distribution,
             longitude_distribution,

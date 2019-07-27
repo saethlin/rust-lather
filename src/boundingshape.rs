@@ -1,8 +1,9 @@
 use std::f64::consts;
 
-use bounds::Bounds;
-use point::Point;
-use spot::{Mortality, Spot};
+use crate::bounds::Bounds;
+use crate::linspace::floatrange;
+use crate::point::Point;
+use crate::spot::{Mortality, Spot};
 
 pub struct BoundingShape {
     center: Point,
@@ -198,8 +199,6 @@ impl BoundingShape {
     }
 
     fn z_bounds_brute(&self, y: f64) -> Option<Bounds> {
-        use linspace::floatrange;
-
         let z_max = floatrange(
             self.center.z + self.radius,
             self.center.z - self.radius,

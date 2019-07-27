@@ -3,12 +3,6 @@
 //!
 //! This project was inspired by a desire to improve upon the
 //! starspot modeling library named SOAP.
-extern crate quadrature;
-extern crate rand;
-extern crate rayon;
-#[macro_use]
-extern crate serde;
-extern crate toml;
 
 mod boundingshape;
 mod bounds;
@@ -25,6 +19,7 @@ mod star;
 pub use bounds::Bounds;
 pub use linspace::{floatrange, linspace};
 pub use simulation::Simulation;
+pub use solar_ccfs::*;
 pub use spot::SpotConfig;
 
 use std::ffi::{CStr, CString};

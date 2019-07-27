@@ -4,6 +4,8 @@ import scipy.signal
 import toml
 from lather._native import ffi, lib
 
+__version__ = "0.1.0"
+
 RV_FOR_CCFS = np.frombuffer(
     ffi.buffer(lib.rv_for_ccfs(), lib.ccf_len() * 8),
     dtype=np.float64,

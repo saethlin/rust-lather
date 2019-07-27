@@ -1,5 +1,6 @@
-use rand::distributions::{LogNormal, Normal, StandardNormal, Uniform};
 use rand::Rng;
+use rand_distr::{LogNormal, Normal, StandardNormal, Uniform};
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone)]
 #[serde(tag = "name")]
@@ -17,9 +18,9 @@ pub enum DistributionConfig {
 #[derive(Debug)]
 pub enum Distribution {
     StandardNormal(StandardNormal),
-    LogNormal(LogNormal),
+    LogNormal(LogNormal<f64>),
     Uniform(Uniform<f64>),
-    Normal(Normal),
+    Normal(Normal<f64>),
 }
 
 impl Distribution {
@@ -38,13 +39,13 @@ impl From<DistributionConfig> for Distribution {
         match c {
             DistributionConfig::StandardNormal => Distribution::StandardNormal(StandardNormal),
             DistributionConfig::LogNormal { mean, std_dev } => {
-                Distribution::LogNormal(LogNormal::new(mean, std_dev))
+                Distribution::LogNormal(LogNormal::new(mean, std_dev).unwrap())
             }
             DistributionConfig::Uniform { min, max } => {
                 Distribution::Uniform(Uniform::new(min, max))
             }
             DistributionConfig::Normal { mean, std_dev } => {
-                Distribution::Normal(Normal::new(mean, std_dev))
+                Distribution::Normal(Normal::new(mean, std_dev).unwrap())
             }
         }
     }
