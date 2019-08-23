@@ -26,4 +26,4 @@ toml = "0.5"
 crate-type = ["cdylib"]
 
 [build-dependencies]
-cbindgen = "0.9"
+cbindgen = {version = "0.9", default-features = false}

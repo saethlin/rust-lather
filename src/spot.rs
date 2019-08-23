@@ -103,7 +103,8 @@ impl Spot {
         }
     }
 
-    pub fn get_ccf(&self, time: f64, profile: &mut [f64]) {
+    pub fn get_ccf(&self, time: f64) -> [f64; CCF_LEN] {
+        let mut profile = [0.0; CCF_LEN];
         let mut quiet_shifted = [0.0; CCF_LEN];
         let mut active_shifted = [0.0; CCF_LEN];
         let bounds = BoundingShape::new(self, time);
@@ -133,6 +134,7 @@ impl Spot {
                 }
             }
         };
+        profile
     }
 
     /// Returns `true` if this spot currently exists.

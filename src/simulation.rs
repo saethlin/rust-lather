@@ -264,20 +264,22 @@ impl Simulation {
 
         time.par_iter()
             .map(|t| {
-                let mut spot_profile = vec![0.0; CCF_LEN];
-                let mut profile = [0.0; CCF_LEN];
+                let mut spots_profile = vec![0.0; CCF_LEN];
                 for spot in self.spots.iter().filter(|s| s.alive(*t)) {
-                    spot.get_ccf(*t, &mut profile);
-                    for (total, this) in spot_profile.iter_mut().zip(profile.iter()) {
+                    let this_profile = spot.get_ccf(*t);
+                    for (total, this) in spots_profile.iter_mut().zip(this_profile.iter()) {
                         *total += *this;
                     }
                 }
 
-                for (spot, star) in spot_profile.iter_mut().zip(self.star.integrated_ccf.iter()) {
+                for (spot, star) in spots_profile
+                    .iter_mut()
+                    .zip(self.star.integrated_ccf.iter())
+                {
                     *spot = *star - *spot;
                 }
 
-                spot_profile
+                spots_profile
             })
             .collect()
     }
