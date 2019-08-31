@@ -1,0 +1,14 @@
+name: Update PyPi
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: docker://quay.io/pypa/manylinux1_x86_64
+    - name: Deploy
+      run: python setup.py build
+      run: pip wheel
+      run: auditwheel repair \*whl --plat manylinux2010_x86_64
