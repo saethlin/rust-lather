@@ -15,7 +15,7 @@ jobs:
           rustc --version
           python3 --version
           cbindgen --version
-          apt update && apt install patchelf
+          sudo apt update && sudo apt install patchelf
           patchelf --version
       - name: Setup
         run: |
