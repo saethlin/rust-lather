@@ -25,4 +25,4 @@ jobs:
       - name: Build
         run: |
           python3 -m pip wheel . --no-deps
-          python3 -m auditwheel repair lather\*.whl --plat manylinux2010_x86_64
+          python3 -m auditwheel repair lather*.whl --plat manylinux2010_x86_64
