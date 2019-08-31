@@ -22,7 +22,6 @@ jobs:
           python3 -m pip install setuptools
           python3 -m pip install wheel
           python3 -m pip install auditwheel
-          python3 -m auditwheel repair --version
       - name: Build
         run: |
           python3 -m pip wheel . --no-deps
