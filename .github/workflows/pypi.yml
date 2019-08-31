@@ -9,11 +9,18 @@ jobs:
       - uses: actions/checkout@v1
       - uses: docker://quay.io/pypa/manylinux1_x86_64
       - name: Info
-        run: lscpu && python -c "import multiprocessing; print(multiprocessing.cpu_count())"
+        run: |
+          lscpu
+          cargo --version
+          rustc --version
+          python --version
+          echo $PATH
       - name: Build
-        run: rustc --version && python setup.py build
+        run: |
+          curl -L -o cbindgen https://github.com/eqrion/cbindgen/releases/download/v0.9.1/cbindgen
+          python setup.py build
       - name: Wheel
         run: |
-          python -m pip install wheel
-          pip wheel
-          auditwheel repair \*whl --plat manylinux2010_x86_64
+          python -m pip install wheel auditwheel
+          pip wheel . --no-deps
+          auditwheel repair lather\*.whl --plat manylinux2010_x86_64
