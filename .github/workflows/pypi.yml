@@ -14,9 +14,9 @@ jobs:
           cargo --version
           rustc --version
           python3 --version
-          echo $PATH
-          which cbindgen
-          which patchelf
+          cbindgen --version
+          apt update && apt install patchelf
+          patchelf --version
       - name: Setup
         run: |
           curl -L -o /usr/share/rust/.cargo/bin/cbindgen https://github.com/eqrion/cbindgen/releases/download/v0.9.1/cbindgen
