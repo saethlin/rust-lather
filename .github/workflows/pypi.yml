@@ -8,6 +8,8 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: docker://quay.io/pypa/manylinux1_x86_64
+      - name: Info
+        run: lscpu && python -c "import multiprocessing; print(multiprocessing.cpu_count())"
       - name: Build
         run: rustc --version && python setup.py build
       - name: Wheel
