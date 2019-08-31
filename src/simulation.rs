@@ -266,8 +266,7 @@ impl Simulation {
             .map(|t| {
                 let mut spots_profile = vec![0.0; CCF_LEN];
                 for spot in self.spots.iter().filter(|s| s.alive(*t)) {
-                    let this_profile = spot.get_ccf(*t);
-                    for (total, this) in spots_profile.iter_mut().zip(this_profile.iter()) {
+                    for (total, this) in spots_profile.iter_mut().zip(spot.get_ccf(*t).iter()) {
                         *total += *this;
                     }
                 }
