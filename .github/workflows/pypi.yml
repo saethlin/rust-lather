@@ -9,8 +9,8 @@ jobs:
       - uses: actions/checkout@v1
       - uses: docker://quay.io/pypa/manylinux1_x86_64
       - name: Build
-        run: python setup.py build
+        run: rustc --version && python setup.py build
       - name: Wheel
-        run: pip wheel
-      - name: AuditWheel
-        run: auditwheel repair \*whl --plat manylinux2010_x86_64
+        - run: python -m pip install wheel
+        - run: pip wheel
+        - run: auditwheel repair \*whl --plat manylinux2010_x86_64
