@@ -13,15 +13,16 @@ jobs:
           lscpu
           cargo --version
           rustc --version
-          python3.5 --version
+          python3 --version
           echo $PATH
           which cbindgen
-      - name: Build
+          which patchelf
+      - name: Setup
         run: |
           curl -L -o /usr/share/rust/.cargo/bin/cbindgen https://github.com/eqrion/cbindgen/releases/download/v0.9.1/cbindgen
-          python3.5 setup.py build
-      - name: Wheel
+          python3 -m pip install wheel auditwheel
+      - name: Build
         run: |
-          python3.5 -m pip install wheel auditwheel
-          python3.5 -m pip wheel . --no-deps
-          python3.5 -m auditwheel repair lather\*.whl --plat manylinux2010_x86_64
+          python3 setup.py build
+          python3 -m pip wheel . --no-deps
+          python3 -m auditwheel repair lather\*.whl --plat manylinux2010_x86_64
