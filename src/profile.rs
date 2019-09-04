@@ -78,7 +78,7 @@ impl Profile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use solar_ccfs::*;
+    use crate::solar_ccfs::*;
 
     #[test]
     fn derivative_len() {

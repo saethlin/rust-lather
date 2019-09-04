@@ -167,6 +167,7 @@ pub unsafe extern "C" fn simulation_add_spot(
         fill_factor,
         plage,
         temperature: None,
+        lifetime: None,
     });
 }
 

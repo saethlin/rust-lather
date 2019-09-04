@@ -72,6 +72,7 @@ impl Config {
                     fill_factor: 0.01,
                     plage: false,
                     temperature: None,
+                    lifetime: None,
                 },
                 SpotConfig {
                     latitude: 30.0,
@@ -79,6 +80,7 @@ impl Config {
                     fill_factor: 0.01,
                     plage: false,
                     temperature: None,
+                    lifetime: None,
                 },
             ]),
         }
@@ -198,6 +200,7 @@ impl Simulation {
                     fill_factor: new_fill_factor,
                     plage: false,
                     temperature: None,
+                    lifetime: None, // TODO: Using from_config here is now getting clunky
                 },
             );
             new_spot.mortality = Mortal(Bounds::new(
@@ -357,8 +360,8 @@ mod tests {
 
     #[test]
     fn example_config_is_valid() {
-        Simulation::from_config(&Path::new("../examples/sun.toml")).unwrap();
-        Simulation::from_config(&Path::new("../examples/random.toml")).unwrap();
+        Simulation::from_config(&Path::new("examples/sun.toml")).unwrap();
+        Simulation::from_config(&Path::new("examples/random.toml")).unwrap();
     }
 }
 

@@ -8,6 +8,12 @@ use crate::linspace::floatrange;
 use crate::solar_ccfs::CCF_LEN;
 use crate::star::Star;
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Lifetime {
+    start: f64,
+    end: f64,
+}
+
 #[derive(Deserialize, Serialize)]
 pub struct SpotConfig {
     pub latitude: f64,
@@ -16,6 +22,7 @@ pub struct SpotConfig {
     #[serde(default)]
     pub plage: bool,
     pub temperature: Option<f64>,
+    pub lifetime: Option<Lifetime>,
 }
 
 /// A circular starspot
@@ -74,7 +81,20 @@ impl Spot {
                 .temperature
                 .unwrap_or(star.temperature - star.spot_temp_diff),
             plage: config.plage,
-            mortality: Mortality::Immortal,
+            mortality: config
+                .lifetime
+                .as_ref()
+                .map(|lifetime| {
+                    if lifetime.start > lifetime.end {
+                        eprintln!(
+                            "This spot lifetime looks backwards and will \
+                             have its begin and end values swapped:\n{:#?}",
+                            lifetime
+                        )
+                    }
+                    Mortality::Mortal(Bounds::new(lifetime.start, lifetime.end))
+                })
+                .unwrap_or(Mortality::Immortal),
             intensity: 0.0,
         }
     }

@@ -25,6 +25,12 @@ latitude = -30.0
 longitude = 180.0
 fill_factor = 0.01
 
+[[spots]]
+latitude = 0.0
+longitude = 0.0
+fill_factor = 0.01
+lifetime = {start = 20.0, end = 50.0}
+
 #[1] http://nssdc.gsfc.nasa.gov/planetary/planetfact.html
 #[2] Meunier et al. 2010
 #[3] Claret & Bloemen 2011
