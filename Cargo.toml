@@ -27,3 +27,6 @@ crate-type = ["cdylib"]
 
 [build-dependencies]
 cbindgen = {version = "0.9.1", default-features = false}
+
+[profile.release]
+debug = 1

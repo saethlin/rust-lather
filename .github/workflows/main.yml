@@ -1,0 +1,13 @@
+name: CI/CD
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Wheel
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: docker run -e "GITHUB_TOKEN=${GITHUB_TOKEN}" saethlin/forge:latest sh -c "$(cat release.sh)"
